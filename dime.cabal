@@ -1,0 +1,79 @@
+name:                dime
+version:             0.0.0.0
+synopsis:            Archiving Twitter DMs.
+-- description:         This pulls down all the Twitter DMs from another person.
+license:             Apache-2.0
+license-file:        LICENSE
+author:              Eric Rochester
+maintainer:          erochest@gmail.com
+-- copyright:           
+-- category:            
+build-type:          Simple
+-- extra-source-files:  
+cabal-version:       >=1.10
+
+library
+  exposed-modules:     Dime.Actions.Default
+                     , Dime.Types
+  -- other-modules:       
+  -- other-extensions:    
+  build-depends:       base >=4.8 && <4.9
+                     , errors
+                     , lens
+                     , text
+                     , text-format
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+
+executable dime
+  main-is:             Main.hs
+  other-modules:       Actions
+                     , Opts
+                     , Types
+  -- other-extensions:    
+  build-depends:       base >=4.8 && <5
+                     , dime
+                     , errors
+                     , text
+                     , optparse-applicative
+                     , errors
+  hs-source-dirs:      app
+  ghc-options:         -O2
+                       -threaded
+                       -rtsopts
+                       "-with-rtsopts=-N"
+                       -- -fprof-auto "-with-rtsopts=-N -p -s -h -i0.1"
+  default-language:    Haskell2010
+
+test-suite dime-specs
+  type:                exitcode-stdio-1.0
+  ghc-options:         -threaded -rtsopts
+  hs-source-dirs:      specs
+  main-is:             Specs.hs
+  other-modules:         Dime.TypesSpec
+  build-depends:         base
+                       , dime
+                       , errors
+                       , lens
+                       , text
+                       , QuickCheck
+                       , smallcheck
+                       , hspec
+  default-language:    Haskell2010
+
+benchmark dime-bench
+  type:                exitcode-stdio-1.0
+  ghc-options:         -O2
+                       -threaded
+                       -rtsopts
+  hs-source-dirs:      bench
+  main-is:             Bench.hs
+  -- other-modules:         
+  build-depends:         base
+                       , dime
+                       , criterion
+  default-language:    Haskell2010
+
+source-repository head
+  type:     git
+  location: https://github.com/erochest/dime
