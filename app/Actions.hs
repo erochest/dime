@@ -8,11 +8,13 @@ module Actions where
 
 import           Control.Error
 
-import           Dime.Actions.Default
+import           Dime.Actions.DMs
+import           Dime.Actions.Login
 
 import           Types
 
 
 action :: Actions -> Script ()
 
-action Default{..} = defaultAction defaultInput defaultOutput
+action Login{..} = loginTwitter loginConfig
+action DMs{..}   = scrapeDMs dmsConfig dmsFriend dmsOutput

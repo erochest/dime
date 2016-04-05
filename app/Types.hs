@@ -1,11 +1,16 @@
 module Types where
 
 
+import           Web.Twitter.Types
+
 -- import           Dime.Types
 
 
 data Actions
-        = Default { defaultOutput :: !FilePath
-                  , defaultInput  :: !FilePath
-                  }
-        deriving (Show, Eq)
+    = Login { loginConfig :: !FilePath
+            }
+    | DMs { dmsConfig :: !FilePath
+          , dmsFriend :: !UserName
+          , dmsOutput :: !FilePath
+          }
+             deriving (Show, Eq)

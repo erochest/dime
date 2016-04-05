@@ -2,6 +2,7 @@
 # BUILD_FLAGS=--pedantic --library-profiling --executable-profiling
 BUILD_FLAGS=--pedantic
 
+CONFIG=.twitter.json
 RUN=stack exec -- dime
 
 init: stack.yaml
@@ -15,6 +16,12 @@ run: build
 docs:
 	stack haddock
 	open `stack path --local-doc-root`/index.html
+
+login: build
+	$(RUN) login --config=$(CONFIG)
+
+dms.json:
+	$(RUN) dms --config=$(CONFIG) --friend=Purdom_L --output=$@
 
 # package:
 # build a release tarball or executable
@@ -68,4 +75,4 @@ restart: distclean init build
 rebuild: clean build
 
 .PHONY: init run docs configure install hlint clean distclean build test
-.PHONY: bench watch watch-test restart rebuild
+.PHONY: bench watch watch-test restart rebuild login
