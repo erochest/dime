@@ -32,28 +32,27 @@ loginTwitter configFile = do
                ) :: Script LoginInfo
 
     let oauth = twitterOAuth
-                { oauthConsumerKey    = config ^. loginKey
-                , oauthConsumerSecret = config ^. loginSecret
-                , oauthCallback       = Just "oop"
+                { oauthConsumerKey    = config ^. loginKey . ckeyKey
+                , oauthConsumerSecret = config ^. loginKey . ckeySecret
+                , oauthCallback       = Just "oob"
                 }
     manager <- scriptIO $ newManager tlsManagerSettings
     Credential cred <- scriptIO . runResourceT $ do
-        -- TODO: Appears to fail on this line. Not sure why.
         cred <- getTemporaryCredential oauth manager
         let url = authorizeUrl oauth cred
         pin <- getPIN url
         getAccessToken oauth (insert "oauth_verifier" pin cred) manager
 
-    up <- (.) <$> lookUpdate "oauth_token"        loginToken       cred
-              <*> lookUpdate "oauth_token_secret" loginTokenSecret cred
-    scriptIO . BL.writeFile configFile . encode $ up config
+    ttoken <-  TToken
+           <$> Prelude.lookup "oauth_token" cred ?? "Missing oauth_token."
+           <*> Prelude.lookup "oauth_token_secret" cred
+                                        ?? "Missing oauth_token_secret."
 
-lookup' :: (Eq a1, Show a1) => a1 -> [(a1, a)] -> Script a
-lookup' k xs = Prelude.lookup k xs ?? ("Missing " ++ show k)
-
-lookUpdate :: (Eq a2, Show a2)
-           => a2 -> ASetter s t a (Maybe a1) -> [(a2, a1)] -> Script (s -> t)
-lookUpdate k f xs = set f . Just <$> lookup' k xs
+    scriptIO
+        . BL.writeFile configFile
+        . encode
+        . (loginToken .~ Just ttoken)
+        $ config
 
 getPIN :: String -> ResourceT IO B.ByteString
 getPIN url = liftIO $ do
