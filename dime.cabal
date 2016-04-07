@@ -15,7 +15,10 @@ cabal-version:       >=1.10
 library
   exposed-modules:     Dime.Actions.DMs
                      , Dime.Actions.Login
+                     , Dime.Auth
+                     , Dime.Config
                      , Dime.Types
+                     , Dime.Utils
   -- other-modules:       
   -- other-extensions:    
   build-depends:       base >=4.8 && <4.9

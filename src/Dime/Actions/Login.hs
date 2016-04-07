@@ -9,27 +9,21 @@ import           Control.Lens                 hiding ((??))
 import           Control.Monad                (void)
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Resource
-import           Data.Aeson
 import qualified Data.ByteString              as B
 import qualified Data.ByteString.Char8        as B8
-import qualified Data.ByteString.Lazy         as BL
 import           Network.HTTP.Conduit
 import           System.IO
 import           Web.Authenticate.OAuth
 import           Web.Browser
 import           Web.Twitter.Conduit
 
+import           Dime.Config
 import           Dime.Types
 
 
-putStrLn' :: String -> Script ()
-putStrLn' = scriptIO . putStrLn
-
 loginTwitter :: FilePath -> Script ()
 loginTwitter configFile = do
-    config <-  (  hoistEither . eitherDecodeStrict'
-               =<< scriptIO (B.readFile configFile)
-               ) :: Script LoginInfo
+    config <- readConfig configFile
 
     let oauth = twitterOAuth
                 { oauthConsumerKey    = config ^. loginKey . ckeyKey
@@ -48,11 +42,7 @@ loginTwitter configFile = do
            <*> Prelude.lookup "oauth_token_secret" cred
                                         ?? "Missing oauth_token_secret."
 
-    scriptIO
-        . BL.writeFile configFile
-        . encode
-        . (loginToken .~ Just ttoken)
-        $ config
+    writeConfig configFile . (loginToken .~ Just ttoken) $ config
 
 getPIN :: String -> ResourceT IO B.ByteString
 getPIN url = liftIO $ do
