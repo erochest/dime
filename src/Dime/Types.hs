@@ -79,3 +79,17 @@ instance ToJSON LoginInfo where
     toJSON (LoginInfo k t) = object [ "key"   .= k
                                     , "token" .= t
                                     ]
+
+data IdCursor
+    = NotStarted
+    | Cursor Integer
+    | CursorDone
+  deriving (Show)
+
+cursorDoneMaybe :: IdCursor -> Maybe Integer
+cursorDoneMaybe (Cursor i) = Just i
+cursorDoneMaybe _          = Nothing
+
+isCursorDone :: IdCursor -> Bool
+isCursorDone CursorDone = True
+isCursorDone _          = False
