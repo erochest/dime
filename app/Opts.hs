@@ -1,4 +1,4 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 
@@ -10,16 +10,10 @@ module Opts
     ) where
 
 
--- import           Control.Monad       (mzero)
--- import qualified Data.List           as L
-import qualified Data.Text           as T
 import           Options.Applicative
 
 import           Types
 
-
-textOption :: Mod OptionFields T.Text -> Parser T.Text
-textOption = option (T.pack <$> str)
 
 configOpt :: Parser FilePath
 configOpt = strOption (  short 'c' <> long "config" <> metavar "CONFIG_FILE"
@@ -30,28 +24,11 @@ outputOpt :: Parser FilePath
 outputOpt = strOption (  short 'o' <> long "output" <> metavar "OUTPUT_FILE"
                       <> help "The file to write back to.")
 
-{-
- - inputOpt :: Parser FilePath
- - inputOpt = strOption (  short 'i' <> long "input" <> metavar "INPUT_FILE"
- -                      <> help "The input file to process.")
- -}
-
-{-
- - inputsOpt :: Parser [FilePath]
- - inputsOpt = many (strArgument (  metavar "INPUT_FILES ..."
- -                               <> help "Input data files."))
- -}
-
 loginOpts :: Parser Actions
 loginOpts = Login <$> configOpt
 
 dmsOpts :: Parser Actions
-dmsOpts
-  = DMs
-    <$> configOpt
-    <*> textOption (  short 'f' <> long "friend" <> metavar "TWITTER_USER"
-                   <> help "The Twitter handle of the friend to scrape DMs of.")
-    <*> outputOpt
+dmsOpts = DMs <$> configOpt <*> outputOpt
 
 opts' :: Parser Actions
 opts' = subparser
