@@ -46,7 +46,7 @@ scrapeDMs configFile output = do
         short <- (++) <$> fmap snd (iterateUntilM done to   (NotStarted, []))
                       <*> fmap snd (iterateUntilM done from (NotStarted, []))
         mapM ( uncurry (*>)
-             . (const throttle &&& call twInfo manager . directMessagesShow . dmId)
+             . (const throttle &&& liftIO . call twInfo manager . directMessagesShow . dmId)
              )
             short
     -- TODO: filter by friend
@@ -58,6 +58,7 @@ scrapeDMs configFile output = do
 
 walkHistory :: ( Monad m
                , MonadResource m
+               , MonadIO m
                , FromJSON a
                , HasMaxIdParam (APIRequest apiName [a])
                )
@@ -70,7 +71,7 @@ walkHistory :: ( Monad m
 walkHistory twInfo manager getId apireq (mMaxId, accum) = do
     throttle
     liftIO . putStrLn $ "retrieving with max ID " ++ show mMaxId
-    res <- call twInfo manager $ apireq & maxId .~ cursorDoneMaybe mMaxId
+    res <- liftIO . call twInfo manager $ apireq & maxId .~ cursorDoneMaybe mMaxId
     case res of
       [] -> return (CursorDone, accum)
       _  -> let nextId = minimum $ fmap getId res
