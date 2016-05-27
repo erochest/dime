@@ -1,13 +1,13 @@
 name:                dime
 version:             0.0.0.0
 synopsis:            Archiving Twitter DMs.
--- description:         This pulls down all the Twitter DMs from another person.
+description:         This pulls down all the Twitter DMs from another person.
 license:             Apache-2.0
 license-file:        LICENSE
 author:              Eric Rochester
 maintainer:          erochest@gmail.com
 -- copyright:           
--- category:            
+category:            Web
 build-type:          Simple
 -- extra-source-files:  
 cabal-version:       >=1.10
@@ -17,11 +17,13 @@ library
                      , Dime.Actions.Login
                      , Dime.Auth
                      , Dime.Config
+                     , Dime.Resume
                      , Dime.Types
                      , Dime.Utils
   -- other-modules:       
   -- other-extensions:    
   build-depends:       base >=4.8 && <4.9
+                     , acid-state
                      , aeson
                      , authenticate-oauth
                      , bytestring
@@ -29,6 +31,7 @@ library
                      , conduit-combinators
                      , conduit-extra
                      , errors
+                     , foldl
                      , http-conduit
                      , lens
                      , monad-control
@@ -36,6 +39,7 @@ library
                      , mtl
                      , open-browser
                      , resourcet
+                     , safecopy
                      , text
                      , text-format
                      , transformers
@@ -59,8 +63,7 @@ executable dime
                      , optparse-applicative
                      , errors
   hs-source-dirs:      app
-  ghc-options:         -O2
-                       -threaded
+  ghc-options:         -threaded
                        -rtsopts
                        "-with-rtsopts=-N"
                        -- -fprof-auto "-with-rtsopts=-N -p -s -h -i0.1"
@@ -84,8 +87,7 @@ test-suite dime-specs
 
 benchmark dime-bench
   type:                exitcode-stdio-1.0
-  ghc-options:         -O2
-                       -threaded
+  ghc-options:         -threaded
                        -rtsopts
   hs-source-dirs:      bench
   main-is:             Bench.hs
