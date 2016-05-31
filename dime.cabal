@@ -30,7 +30,9 @@ library
                      , conduit
                      , conduit-combinators
                      , conduit-extra
+                     , directory
                      , errors
+                     , filepath
                      , foldl
                      , http-conduit
                      , lens

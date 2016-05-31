@@ -5,19 +5,18 @@
 module Dime.Actions.DMs where
 
 
-import           Control.Arrow                  ((&&&))
 import           Control.Concurrent             (threadDelay)
 import           Control.Error
 import           Control.Lens                   hiding (from, to, (??))
 import           Control.Monad
 import           Control.Monad.IO.Class
-import           Control.Monad.Loops            (iterateUntilM)
 import           Control.Monad.Trans.Resource
 import           Data.Aeson
 import           Data.Bifunctor
 import qualified Data.ByteString.Lazy           as BL
 import qualified Data.List                      as L
 import           Network.HTTP.Conduit
+import           System.FilePath
 import           Web.Twitter.Conduit.Api
 import           Web.Twitter.Conduit.Base
 import           Web.Twitter.Conduit.Parameters
@@ -27,11 +26,12 @@ import           Web.Twitter.Types
 
 import           Dime.Auth
 import           Dime.Config
+import           Dime.Resume
 import           Dime.Types
 
 
 scrapeDMs :: FilePath -> FilePath -> FilePath -> Script ()
-scrapeDMs configFile output _stateDir = do
+scrapeDMs configFile output stateDir = do
     config <- readConfig configFile
     twInfo <- getTWInfo config ?? "You have to call 'dime login' first."
 
@@ -43,18 +43,30 @@ scrapeDMs configFile output _stateDir = do
                         (directMessagesSent & count ?~ 100)
                         >=> liftIO . sequenceA . second (write' "from.json")
             done = isCursorDone . fst
-        short <- (++) <$> fmap snd (iterateUntilM done to   (NotStarted, []))
-                      <*> fmap snd (iterateUntilM done from (NotStarted, []))
-        mapM ( uncurry (*>)
-             . (const throttle &&& liftIO . call twInfo manager . directMessagesShow . dmId)
-             )
-            short
+        short <- (++) <$> fmap snd (withResumeUntil (stateDir </> "to")   done to
+                                        (NotStarted, []))
+                      <*> fmap snd (withResumeUntil (stateDir </> "from") done from
+                                        (NotStarted, []))
+        withResumeFold (stateDir </> "show")
+                       (foldStep (call twInfo manager . directMessagesShow))
+                       (return (NotStarted, []))
+                       (return . uncurry DMCursor)
+                       short
     -- TODO: filter by friend
 
     scriptIO . write $ L.sortOn dmId dms
     where
         write = BL.writeFile output . encode
         write' fn xs = BL.writeFile fn (encode xs) >> return xs
+
+        foldStep :: MonadIO m
+                 => (StatusId -> IO DirectMessage)
+                 -> CursorData
+                 -> DirectMessage
+                 -> m CursorData
+        foldStep f c dm = do
+            throttle
+            liftIO . fmap (flip (over _2) c . (:)) . f $ dmId dm
 
 walkHistory :: ( Monad m
                , MonadResource m
