@@ -2,20 +2,28 @@
 {-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE OverloadedStrings  #-}
 {-# LANGUAGE TemplateHaskell    #-}
+{-# LANGUAGE TypeFamilies       #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 
 module Dime.Types where
 
 
-import           Control.Lens       hiding ((.=))
+import           Control.Arrow        ((&&&))
+import           Control.Lens         hiding ((.=))
 import           Control.Monad
+import           Control.Monad.Reader
+import           Control.Monad.State
+import           Data.Acid
 import           Data.Aeson
-import           Data.Aeson.Types   (Parser)
-import           Data.ByteString    (ByteString)
+import           Data.Aeson.Types     (Parser)
+import           Data.ByteString      (ByteString)
 import           Data.Data
-import qualified Data.Text          as T
+import           Data.SafeCopy
+import qualified Data.Text            as T
 import           Data.Text.Encoding
 import           GHC.Generics
+import           Web.Twitter.Types
 
 
 unString :: MonadPlus m => Value -> m T.Text
@@ -84,7 +92,9 @@ data IdCursor
     = NotStarted
     | Cursor Integer
     | CursorDone
-  deriving (Show)
+  deriving (Eq, Show, Data, Typeable, Generic)
+
+$(deriveSafeCopy 0 'base ''IdCursor)
 
 cursorDoneMaybe :: IdCursor -> Maybe Integer
 cursorDoneMaybe (Cursor i) = Just i
@@ -93,3 +103,25 @@ cursorDoneMaybe _          = Nothing
 isCursorDone :: IdCursor -> Bool
 isCursorDone CursorDone = True
 isCursorDone _          = False
+
+type CursorData = (IdCursor, [DirectMessage])
+
+data DMCursor
+    = DMCursor
+    { _cursorMaxId :: !IdCursor
+    , _cursorDMs   :: ![DirectMessage]
+    } deriving (Show, Eq, Data, Typeable, Generic)
+$(makeLenses ''DMCursor)
+
+$(deriveSafeCopy 0 'base ''Coordinates)
+$(deriveSafeCopy 0 'base ''User)
+$(deriveSafeCopy 0 'base ''DirectMessage)
+$(deriveSafeCopy 0 'base ''DMCursor)
+
+writeDMCursor :: CursorData -> Update DMCursor ()
+writeDMCursor = put . uncurry DMCursor
+
+queryDMCursor :: Query DMCursor CursorData
+queryDMCursor = (view cursorMaxId &&& view cursorDMs) <$> ask
+
+$(makeAcidic ''DMCursor ['writeDMCursor, 'queryDMCursor])
