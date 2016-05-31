@@ -30,8 +30,8 @@ import           Dime.Config
 import           Dime.Types
 
 
-scrapeDMs :: FilePath -> FilePath -> Script ()
-scrapeDMs configFile output = do
+scrapeDMs :: FilePath -> FilePath -> FilePath -> Script ()
+scrapeDMs configFile output _stateDir = do
     config <- readConfig configFile
     twInfo <- getTWInfo config ?? "You have to call 'dime login' first."
 

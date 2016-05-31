@@ -28,7 +28,13 @@ loginOpts :: Parser Actions
 loginOpts = Login <$> configOpt
 
 dmsOpts :: Parser Actions
-dmsOpts = DMs <$> configOpt <*> outputOpt
+dmsOpts = DMs
+        <$> configOpt
+        <*> outputOpt
+        <*> strOption (  short 's' <> long "state-dir" <> metavar "DIRNAME"
+                      <> value ".dime-state"
+                      <> help "Path to hold working state. Default is \
+                              \.dime-state")
 
 opts' :: Parser Actions
 opts' = subparser
