@@ -5,6 +5,8 @@ BUILD_FLAGS=--pedantic
 CONFIG=.twitter.json
 RUN=stack exec -- dime
 
+USER=
+
 init: stack.yaml
 
 stack.yaml:
@@ -20,8 +22,8 @@ docs:
 login: build
 	$(RUN) login --config=$(CONFIG)
 
-dms.json:
-	$(RUN) dms --config=$(CONFIG) --friend=Purdom_L --output=$@
+dms.json: build
+	$(RUN) dms --config=$(CONFIG) $(USER) --output=$@
 
 # package:
 # build a release tarball or executable
