@@ -10,6 +10,7 @@ module Opts
     ) where
 
 
+import qualified Data.Text           as T
 import           Options.Applicative
 
 import           Types
@@ -30,6 +31,12 @@ loginOpts = Login <$> configOpt
 dmsOpts :: Parser Actions
 dmsOpts = DMs
         <$> configOpt
+        <*> optional (option (T.pack <$> str)
+                             (  short 'u' <> long "user" <> metavar "USERNAME"
+                             <> help "The user name for a user to filter \
+                                     \interactions with."
+                             )
+                     )
         <*> outputOpt
         <*> strOption (  short 's' <> long "state-dir" <> metavar "DIRNAME"
                       <> value ".dime-state"

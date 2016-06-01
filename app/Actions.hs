@@ -17,4 +17,4 @@ import           Types
 action :: Actions -> Script ()
 
 action Login{..} = loginTwitter loginConfig
-action DMs{..}   = scrapeDMs dmsConfig dmsOutput dmsStateDir
+action DMs{..}   = scrapeDMs dmsConfig dmsUserName dmsOutput dmsStateDir

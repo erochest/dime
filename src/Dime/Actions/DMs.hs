@@ -15,6 +15,7 @@ import           Data.Aeson
 import           Data.Bifunctor
 import qualified Data.ByteString.Lazy           as BL
 import qualified Data.List                      as L
+import qualified Data.Text                      as T
 import           Network.HTTP.Conduit
 import           System.FilePath
 import           Web.Twitter.Conduit.Api
@@ -30,8 +31,8 @@ import           Dime.Resume
 import           Dime.Types
 
 
-scrapeDMs :: FilePath -> FilePath -> FilePath -> Script ()
-scrapeDMs configFile output stateDir = do
+scrapeDMs :: FilePath -> Maybe T.Text -> FilePath -> FilePath -> Script ()
+scrapeDMs configFile mUserName output stateDir = do
     config <- readConfig configFile
     twInfo <- getTWInfo config ?? "You have to call 'dime login' first."
 
@@ -51,11 +52,15 @@ scrapeDMs configFile output stateDir = do
                        (foldStep (call twInfo manager . directMessagesShow))
                        (return (NotStarted, []))
                        (return . uncurry DMCursor)
-                       short
-    -- TODO: filter by friend
+                       . maybe id (filter . involvesUser) mUserName
+                       $ short
 
     scriptIO . write $ L.sortOn dmId dms
     where
+        involvesUser :: T.Text -> DirectMessage -> Bool
+        involvesUser target dm =  userName (dmSender    dm) == target
+                               || userName (dmRecipient dm) == target
+
         write = BL.writeFile output . encode
         write' fn xs = BL.writeFile fn (encode xs) >> return xs
 
