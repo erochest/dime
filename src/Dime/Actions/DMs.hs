@@ -52,14 +52,15 @@ scrapeDMs configFile mUserName output stateDir = do
                        (foldStep (call twInfo manager . directMessagesShow))
                        (return (NotStarted, []))
                        (return . uncurry DMCursor)
+                       . fmap dmId
                        . maybe id (filter . involvesUser) mUserName
                        $ short
 
-    scriptIO . write $ L.sortOn dmId dms
+    scriptIO . write $ L.sortOn dmCreatedAt dms
     where
         involvesUser :: T.Text -> DirectMessage -> Bool
-        involvesUser target dm =  userName (dmSender    dm) == target
-                               || userName (dmRecipient dm) == target
+        involvesUser name dm =  userScreenName (dmSender    dm) == name
+                             || userScreenName (dmRecipient dm) == name
 
         write = BL.writeFile output . encode
         write' fn xs = BL.writeFile fn (encode xs) >> return xs
@@ -67,11 +68,12 @@ scrapeDMs configFile mUserName output stateDir = do
         foldStep :: MonadIO m
                  => (StatusId -> IO DirectMessage)
                  -> CursorData
-                 -> DirectMessage
+                 -> StatusId
                  -> m CursorData
-        foldStep f c dm = do
+        foldStep f c dm = liftIO $ do
             throttle
-            liftIO . fmap (flip (over _2) c . (:)) . f $ dmId dm
+            putStrLn $ "Retrieving all of " ++ show dm
+            flip (over _2) c . (:) <$> f dm
 
 walkHistory :: ( Monad m
                , MonadResource m
