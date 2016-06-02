@@ -37,26 +37,24 @@ scrapeDMs configFile mUserName output stateDir = do
     twInfo <- getTWInfo config ?? "You have to call 'dime login' first."
 
     manager <- scriptIO $ newManager tlsManagerSettings
-    dms <- scriptIO . runResourceT $ do
-        let to   = walkHistory twInfo manager dmId (directMessages & count ?~ 100)
+    dms <- scriptIO . runResourceT $
+        let to   = walkHistory twInfo manager dmId
+                        (directMessages & count ?~ 100 & fullText ?~ True)
                     >=> liftIO . sequenceA . second (write' "to.json")
             from = walkHistory twInfo manager dmId
-                        (directMessagesSent & count ?~ 100)
-                        >=> liftIO . sequenceA . second (write' "from.json")
+                        (directMessagesSent & count ?~ 100 & fullText ?~ True)
+                    >=> liftIO . sequenceA . second (write' "from.json")
             done = isCursorDone . fst
-        short <- (++) <$> fmap snd (withResumeUntil (stateDir </> "to")   done to
+        in  (++) <$> fmap snd (withResumeUntil (stateDir </> "to")   done to
                                         (NotStarted, []))
-                      <*> fmap snd (withResumeUntil (stateDir </> "from") done from
+                 <*> fmap snd (withResumeUntil (stateDir </> "from") done from
                                         (NotStarted, []))
-        withResumeFold (stateDir </> "show")
-                       (foldStep (call twInfo manager . directMessagesShow))
-                       (return (NotStarted, []))
-                       (return . uncurry DMCursor)
-                       . fmap dmId
-                       . maybe id (filter . involvesUser) mUserName
-                       $ short
 
-    scriptIO . write $ L.sortOn dmCreatedAt dms
+    scriptIO
+        . write
+        . L.sortOn dmCreatedAt
+        . maybe id (filter . involvesUser) mUserName
+        $ dms
     where
         involvesUser :: T.Text -> DirectMessage -> Bool
         involvesUser name dm =  userScreenName (dmSender    dm) == name
@@ -64,16 +62,6 @@ scrapeDMs configFile mUserName output stateDir = do
 
         write = BL.writeFile output . encode
         write' fn xs = BL.writeFile fn (encode xs) >> return xs
-
-        foldStep :: MonadIO m
-                 => (StatusId -> IO DirectMessage)
-                 -> CursorData
-                 -> StatusId
-                 -> m CursorData
-        foldStep f c dm = liftIO $ do
-            throttle
-            putStrLn $ "Retrieving all of " ++ show dm
-            flip (over _2) c . (:) <$> f dm
 
 walkHistory :: ( Monad m
                , MonadResource m
