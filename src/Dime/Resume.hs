@@ -35,7 +35,7 @@ withResumeFold stateDir fstep finit ffinal inputs = do
 
     _cursorDMs
         <$> L.foldM (L.FoldM fstep' cursor ffinal) inputs
-        <*  liftIO (closeAcidState acid)
+        <*  liftIO (createCheckpoint acid)
 
 withResumeUntil :: MonadIO m
                 => FilePath
@@ -46,7 +46,7 @@ withResumeUntil :: MonadIO m
 withResumeUntil stateDir isDone rstep rinit = do
     liftIO $ createDirectoryIfMissing True stateDir
     acid <- liftIO $ openLocalStateFrom stateDir $ uncurry DMCursor rinit
-    resume acid rstep rinit <* liftIO (closeAcidState acid)
+    resume acid rstep rinit <* liftIO (createCheckpoint acid)
     where
         resume :: MonadIO m
                => AcidState DMCursor
