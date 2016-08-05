@@ -12,4 +12,7 @@ data Actions
           , dmsOutput   :: !FilePath
           , dmsStateDir :: !FilePath
           }
-             deriving (Show, Eq)
+    | Merge { mergeBaseDir :: !FilePath
+            , mergeOutput  :: !FilePath
+            }
+    deriving (Show, Eq)

@@ -10,6 +10,7 @@ import           Control.Error
 
 import           Dime.Actions.DMs
 import           Dime.Actions.Login
+import           Dime.Actions.Merge
 
 import           Types
 
@@ -18,3 +19,4 @@ action :: Actions -> Script ()
 
 action Login{..} = loginTwitter loginConfig
 action DMs{..}   = scrapeDMs dmsConfig dmsUserName dmsOutput dmsStateDir
+action Merge{..} = mergeFiles mergeBaseDir mergeOutput

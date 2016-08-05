@@ -43,12 +43,21 @@ dmsOpts = DMs
                       <> help "Path to hold working state. Default is \
                               \.dime-state")
 
+mergeOpts :: Parser Actions
+mergeOpts =   Merge
+          <$> strOption (  short 'd' <> long "dir" <> metavar "DIRECTORY"
+                        <> help "The directory to walk over for input files.")
+          <*> outputOpt
+
 opts' :: Parser Actions
 opts' = subparser
     (  command "login" (info (helper <*> loginOpts)
                         (progDesc "Set login keys in the config file."))
     <> command "dms" (info (helper <*> dmsOpts)
                         (progDesc "Default action and options."))
+    <> command "merge" (info (helper <*> mergeOpts)
+                        (progDesc "Walk over a directory and merge all output\
+                                  \ file."))
     )
 
 opts :: ParserInfo Actions

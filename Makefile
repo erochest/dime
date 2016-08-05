@@ -25,6 +25,9 @@ login: build
 dms.json: build
 	$(RUN) dms --config=$(CONFIG) $(USER) --output=$@
 
+merged.json:
+	$(RUN) merge --dir archive/ --output $@
+
 # package:
 # build a release tarball or executable
 #
@@ -67,7 +70,7 @@ bench:
 	stack bench $(BUILD_FLAGS)
 
 watch:
-	ghcid "--command=stack ghci"
+	stack build $(BUILD_FLAGS) --file-watch --fast
 
 watch-test:
 	stack test --file-watch --pedantic # --test-arguments "-m TODO"
