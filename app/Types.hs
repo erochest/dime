@@ -10,9 +10,12 @@ data Actions
     | DMs { dmsConfig   :: !FilePath
           , dmsUserName :: !(Maybe T.Text)
           , dmsOutput   :: !FilePath
-          , dmsStateDir :: !FilePath
           }
     | Merge { mergeBaseDir :: !FilePath
             , mergeOutput  :: !FilePath
             }
+    | Archive { archiveConfig   :: !FilePath
+              , archiveUserName :: !(Maybe T.Text)
+              , archiveDir      :: !FilePath
+              }
     deriving (Show, Eq)

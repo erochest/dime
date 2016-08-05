@@ -13,12 +13,14 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 library
-  exposed-modules:     Dime.Actions.DMs
+  exposed-modules:     Dime.Actions.Archive
+                     , Dime.Actions.DMs
                      , Dime.Actions.Login
                      , Dime.Actions.Merge
                      , Dime.Auth
                      , Dime.Config
                      , Dime.Resume
+                     , Dime.Twitter
                      , Dime.Types
                      , Dime.Utils
   -- other-modules:       
@@ -46,6 +48,7 @@ library
                      , safecopy
                      , text
                      , text-format
+                     , time
                      , transformers
                      , twitter-conduit
                      , twitter-types

@@ -3,13 +3,18 @@ module Dime.Utils where
 
 import           Control.Arrow
 import           Control.Error
+import           Control.Monad             ((<=<))
 import           Data.Foldable
-import qualified Data.HashMap.Strict as M
+import qualified Data.HashMap.Strict       as M
 import           Debug.Trace
 import           System.Directory
 import           System.FilePath
 import           Text.Groom
+import           Web.Twitter.Conduit.Types
 import           Web.Twitter.Types
+
+import           Dime.Auth
+import           Dime.Config
 
 
 putStrLn' :: String -> Script ()
@@ -43,3 +48,17 @@ watchM msg x = do
 
 dedupDM :: [DirectMessage] -> [DirectMessage]
 dedupDM = toList . M.fromList . fmap (dmId &&& id)
+
+foldUntilM :: Monad m => (a -> m Bool) -> (a -> m a) -> a -> m a
+foldUntilM p f x = do
+    r <- p x
+    if r
+       then return x
+       else foldUntilM p f =<< f x
+
+readTWInfo :: FilePath -> Script TWInfo
+readTWInfo =
+    (?? "You have to call 'dime login' first.") . getTWInfo <=< readConfig
+
+bothA :: Applicative m => (m a, m b) -> m (a, b)
+bothA (ma, mb) = (,) <$> ma <*> mb
