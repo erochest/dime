@@ -55,6 +55,21 @@ archiveOpts =   Archive
                           <> metavar "DIRNAME"
                           <> help "A directory of archived DMs.")
 
+gmailOpts :: Parser Actions
+gmailOpts =   Gmail
+          <$> configOpt
+          <*> strOption (  short 'u' <> long "user-index" <> metavar "JSON_FILE"
+                        <> help "A JSON object mapping Twitter handles to\
+                                \ email addresses.")
+          <*> strOption (  short 'i' <> long "input" <> metavar "ARCHIVE_FILE"
+                        <> help "An archive file to read Tweets from and\
+                                \ insert into Gmail.")
+          <*> option (T.pack <$> str)
+                        (  short 'l' <> long "label" <> metavar "LABEL_NAME"
+                        <> value "TWITTER"
+                        <> help "The name of the label to file the Tweets in.\
+                                \ Defaults to 'TWITTER'.")
+
 opts' :: Parser Actions
 opts' = subparser
     (  command "login" (info (helper <*> loginOpts)
@@ -69,6 +84,9 @@ opts' = subparser
                                       \ existing archive, and create a new\
                                       \ one. This is like a combination of\
                                       \ 'dms' and 'merge'."))
+    <> command "gmail" (info (helper <*> gmailOpts)
+                        (progDesc "Read DMs from an archive file and insert\
+                                  \ into Gmail."))
     )
 
 opts :: ParserInfo Actions

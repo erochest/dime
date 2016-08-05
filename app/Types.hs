@@ -18,4 +18,9 @@ data Actions
               , archiveUserName :: !(Maybe T.Text)
               , archiveDir      :: !FilePath
               }
+    | Gmail { gmailConfig      :: !FilePath
+            , gmailUserIndex   :: !FilePath
+            , gmailArchiveFile :: !FilePath
+            , gmailLabel       :: !T.Text
+            }
     deriving (Show, Eq)

@@ -15,6 +15,7 @@ cabal-version:       >=1.10
 library
   exposed-modules:     Dime.Actions.Archive
                      , Dime.Actions.DMs
+                     , Dime.Actions.Gmail
                      , Dime.Actions.Login
                      , Dime.Actions.Merge
                      , Dime.Auth
@@ -37,6 +38,9 @@ library
                      , errors
                      , filepath
                      , foldl
+                     , gogol
+                     , gogol-core
+                     , gogol-gmail
                      , groom
                      , http-conduit
                      , lens
@@ -46,6 +50,7 @@ library
                      , open-browser
                      , resourcet
                      , safecopy
+                     , split
                      , text
                      , text-format
                      , time
