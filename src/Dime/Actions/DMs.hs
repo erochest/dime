@@ -57,8 +57,8 @@ scrapeDMs configFile mUserName output stateDir = do
         $ dms
     where
         involvesUser :: T.Text -> DirectMessage -> Bool
-        involvesUser name dm =  userScreenName (dmSender    dm) == name
-                             || userScreenName (dmRecipient dm) == name
+        involvesUser n dm =  userScreenName (dmSender    dm) == n
+                          || userScreenName (dmRecipient dm) == n
 
         write = BL.writeFile output . encode
         write' fn xs = BL.writeFile fn (encode xs) >> return xs

@@ -7,13 +7,13 @@ RUN=stack exec -- dime
 
 USER=
 
+run: build
+	$(RUN) --help
+
 init: stack.yaml
 
 stack.yaml:
 	stack init --prefer-nightly
-
-run: build
-	$(RUN) --help
 
 docs:
 	stack haddock
