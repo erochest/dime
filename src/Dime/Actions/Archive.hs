@@ -20,12 +20,12 @@ archiveDMs configFile mUserName archiveDir = do
     now <-  formatTime defaultTimeLocale "%Y%m%d-%H%M%S"
         <$> scriptIO getCurrentTime
     scriptIO
-        . B.writeFile (archiveDir </> ("archive-" ++ now ++ ".json"))
-        . encode
-        . sortByDate
-        . dedupDM
-        $ (++) <$> (   fmap (filterByUser mUserName)
-                   .   downloadDMs
-                   =<< readTWInfo configFile
-                   )
-               <*> readDMDirTree archiveDir
+        .   B.writeFile (archiveDir </> ("archive-" ++ now ++ ".json"))
+        .   encode
+        .   sortByDate
+        .   dedupDM
+        =<< (++) <$> (   fmap (filterByUser mUserName)
+                     .   downloadDMs
+                     =<< readTWInfo configFile
+                     )
+                 <*> readDMDirTree archiveDir
