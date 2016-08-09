@@ -5,8 +5,10 @@ import qualified Data.Text as T
 
 
 data Actions
-    = Login { loginConfig :: !FilePath
-            }
+    = TLogin { tLoginConfig :: !FilePath
+             }
+    | GLogin { gLoginConfig :: !FilePath
+             }
     | DMs { dmsConfig   :: !FilePath
           , dmsUserName :: !(Maybe T.Text)
           , dmsOutput   :: !FilePath

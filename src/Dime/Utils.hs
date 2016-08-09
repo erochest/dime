@@ -15,6 +15,7 @@ import           Web.Twitter.Types
 
 import           Dime.Auth
 import           Dime.Config
+import           Dime.Types
 
 
 putStrLn' :: String -> Script ()
@@ -57,8 +58,10 @@ foldUntilM p f x = do
        else foldUntilM p f =<< f x
 
 readTWInfo :: FilePath -> Script TWInfo
-readTWInfo =
-    (?? "You have to call 'dime login' first.") . getTWInfo <=< readConfig
+readTWInfo = getTWInfo' <=< readConfig
+
+getTWInfo' :: LoginInfo s -> Script TWInfo
+getTWInfo' = (?? "You have to call 'dime login' first.") . getTWInfo
 
 bothA :: Applicative m => (m a, m b) -> m (a, b)
 bothA (ma, mb) = (,) <$> ma <*> mb

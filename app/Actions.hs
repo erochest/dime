@@ -19,7 +19,8 @@ import           Types
 
 action :: Actions -> Script ()
 
-action Login{..}   = loginTwitter loginConfig
+action TLogin{..}  = loginTwitter tLoginConfig
+action GLogin{..}  = loginGmail gLoginConfig
 action DMs{..}     = scrapeDMs dmsConfig dmsUserName dmsOutput
 action Merge{..}   = mergeFiles mergeBaseDir mergeOutput
 action Archive{..} = archiveDMs archiveConfig archiveUserName archiveDir

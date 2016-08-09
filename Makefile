@@ -2,7 +2,7 @@
 # BUILD_FLAGS=--pedantic --library-profiling --executable-profiling
 BUILD_FLAGS=--pedantic
 
-CONFIG=.twitter.json
+CONFIG=.creds.json
 RUN=stack exec -- dime
 
 USER=
@@ -19,8 +19,13 @@ docs:
 	stack haddock
 	open `stack path --local-doc-root`/index.html
 
-login: build
-	$(RUN) login --config=$(CONFIG)
+login: build login-twitter login-gmail
+
+login-twitter:
+	$(RUN) twitter-login --config=$(CONFIG)
+
+login-gmail:
+	$(RUN) gmail-login --config=$(CONFIG)
 
 dms.json: build
 	$(RUN) dms --config=$(CONFIG) $(USER) --output=$@
@@ -75,9 +80,12 @@ watch:
 watch-test:
 	stack test --file-watch --pedantic # --test-arguments "-m TODO"
 
+count-dms:
+	ls -1 archive/*.json | tail -1 | xargs cat | aeson-pretty | grep '"text"' | wc -l
+
 restart: distclean init build
 
 rebuild: clean build
 
 .PHONY: init run docs configure install hlint clean distclean build test
-.PHONY: bench watch watch-test restart rebuild login
+.PHONY: bench watch watch-test restart rebuild login count-dms

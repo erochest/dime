@@ -32,8 +32,11 @@ userOpt = option (T.pack <$> str)
                          \interactions with."
                  )
 
-loginOpts :: Parser Actions
-loginOpts = Login <$> configOpt
+tLoginOpts :: Parser Actions
+tLoginOpts = TLogin <$> configOpt
+
+gLoginOpts :: Parser Actions
+gLoginOpts = GLogin <$> configOpt
 
 dmsOpts :: Parser Actions
 dmsOpts = DMs
@@ -72,8 +75,12 @@ gmailOpts =   Gmail
 
 opts' :: Parser Actions
 opts' = subparser
-    (  command "login" (info (helper <*> loginOpts)
-                        (progDesc "Set login keys in the config file."))
+    (  command "twitter-login" (info (helper <*> tLoginOpts)
+                                    (progDesc "Set Twitter login keys in the\
+                                              \ config file."))
+    <> command "gmail-login" (info (helper <*> gLoginOpts)
+                                    (progDesc "Set Gmail login keys in the\
+                                              \ config file."))
     <> command "dms" (info (helper <*> dmsOpts)
                         (progDesc "Default action and options."))
     <> command "merge" (info (helper <*> mergeOpts)

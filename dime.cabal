@@ -20,6 +20,7 @@ library
                      , Dime.Actions.Merge
                      , Dime.Auth
                      , Dime.Config
+                     , Dime.Google
                      , Dime.Resume
                      , Dime.Twitter
                      , Dime.Types
@@ -38,16 +39,15 @@ library
                      , errors
                      , filepath
                      , foldl
-                     , gogol
-                     , gogol-core
-                     , gogol-gmail
                      , groom
+                     , hoauth2
                      , http-conduit
                      , lens
                      , monad-control
                      , monad-loops
                      , mtl
                      , open-browser
+                     , process
                      , resourcet
                      , safecopy
                      , split
@@ -58,6 +58,7 @@ library
                      , twitter-conduit
                      , twitter-types
                      , twitter-types-lens
+                     , wreq
                      , unordered-containers
   hs-source-dirs:      src
   default-language:    Haskell2010

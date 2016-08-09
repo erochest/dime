@@ -9,13 +9,13 @@ import qualified Data.ByteString.Lazy as BL
 import           Dime.Types
 
 
-readConfig :: FilePath -> Script LoginInfo
+readConfig :: FilePath -> Script (LoginInfo s)
 readConfig configFile =
-    hoistEither . eitherDecodeStrict'
-  =<< scriptIO (BS.readFile configFile)
+  hoistEither . eitherDecodeStrict'
+      =<< scriptIO (BS.readFile configFile)
 
 
-writeConfig :: FilePath -> LoginInfo -> Script ()
+writeConfig :: FilePath -> LoginInfo s -> Script ()
 writeConfig configFile config =
     scriptIO . BL.writeFile configFile $ encode config
 

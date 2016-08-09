@@ -10,7 +10,7 @@ module Dime.Types where
 
 
 import           Control.Arrow        ((&&&))
-import           Control.Lens         hiding ((.=))
+import           Control.Lens         hiding (at, (.=))
 import           Control.Monad
 import           Control.Monad.Reader
 import           Control.Monad.State
@@ -23,6 +23,7 @@ import           Data.SafeCopy
 import qualified Data.Text            as T
 import           Data.Text.Encoding
 import           GHC.Generics
+import           Network.OAuth.OAuth2
 import           Web.Twitter.Types
 
 
@@ -71,21 +72,51 @@ instance ToJSON TwitterToken where
                                  , "secret" .= decodeUtf8 s
                                  ]
 
-data LoginInfo
-    = LoginInfo
-        { _loginKey   :: !ConsumerKey
-        , _loginToken :: !(Maybe TwitterToken)
-        }
-        deriving (Show, Eq, Data, Typeable, Generic)
-$(makeLenses ''LoginInfo)
+data TwitterLoginInfo
+    = TwitterLoginInfo
+    { _loginKey   :: !ConsumerKey
+    , _loginToken :: !(Maybe TwitterToken)
+    }
+    deriving (Show, Eq, Data, Typeable, Generic)
+$(makeLenses ''TwitterLoginInfo)
 
-instance FromJSON LoginInfo where
-    parseJSON (Object v) = LoginInfo <$> v .: "key" <*> v .:? "token"
+instance FromJSON TwitterLoginInfo where
+    parseJSON (Object v) = TwitterLoginInfo <$> v .: "key" <*> v .:? "token"
     parseJSON _          = mzero
 
-instance ToJSON LoginInfo where
-    toJSON (LoginInfo k t) = object [ "key"   .= k
-                                    , "token" .= t
+instance ToJSON TwitterLoginInfo where
+    toJSON (TwitterLoginInfo k t) = object [ "key"   .= k
+                                           , "token" .= t
+                                           ]
+
+newtype JsonToken = JsonToken { unJsonToken :: AccessToken }
+
+instance ToJSON JsonToken where
+    toJSON (JsonToken (AccessToken at rt ei tt it)) =
+        object [ "access_token"  .=      decodeUtf8 at
+               , "refresh_token" .= fmap decodeUtf8 rt
+               , "expires_in"    .=                 ei
+               , "token_type"    .= fmap decodeUtf8 tt
+               , "id_token"      .= fmap decodeUtf8 it
+               ]
+
+instance FromJSON JsonToken where
+    parseJSON v = JsonToken <$> parseJSON v
+
+data LoginInfo s
+    = LoginInfo
+    { _loginTwitter :: !(Maybe TwitterLoginInfo)
+    , _loginGmail   :: !(Maybe JsonToken)
+    }
+$(makeLenses ''LoginInfo)
+
+instance FromJSON (LoginInfo s) where
+    parseJSON (Object v) = LoginInfo <$> v .:? "twitter" <*> v .:? "gmail"
+    parseJSON _          = mzero
+
+instance ToJSON (LoginInfo s) where
+    toJSON (LoginInfo t g) = object [ "twitter" .= t
+                                    , "gmail"   .= g
                                     ]
 
 data IdCursor
