@@ -71,6 +71,7 @@ executable dime
   -- other-extensions:    
   build-depends:       base >=4.8 && <5
                      , dime
+                     , bytestring
                      , errors
                      , text
                      , twitter-types

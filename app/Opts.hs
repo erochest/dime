@@ -10,7 +10,8 @@ module Opts
     ) where
 
 
-import qualified Data.Text           as T
+import qualified Data.ByteString.Char8 as B8
+import qualified Data.Text             as T
 import           Options.Applicative
 
 import           Types
@@ -33,7 +34,16 @@ userOpt = option (T.pack <$> str)
                  )
 
 tLoginOpts :: Parser Actions
-tLoginOpts = TLogin <$> configOpt
+tLoginOpts =   TLogin
+           <$> configOpt
+           <*> optional ((,) <$> option (B8.pack <$> str)
+                                    (  short 'k' <> long "key" <> metavar "API_KEY"
+                                    <> help "The access key for the Twitter API.")
+                             <*> option (B8.pack <$> str)
+                                    (  short 's' <> long "secret"
+                                    <> metavar "API_SECRET"
+                                    <> help "The access secret for the Twitter API.")
+                        )
 
 gLoginOpts :: Parser Actions
 gLoginOpts = GLogin <$> configOpt

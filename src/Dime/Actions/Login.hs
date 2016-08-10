@@ -6,6 +6,8 @@
 module Dime.Actions.Login where
 
 
+import           Control.Applicative
+import           Control.Arrow                hiding (first)
 import           Control.Error
 import           Control.Lens                 hiding ((??))
 import           Control.Monad                (void)
@@ -29,14 +31,17 @@ import           Dime.Types
 import qualified Dime.Types                   as D
 
 
-loginTwitter :: FilePath -> Script ()
-loginTwitter configFile = withConfig configFile $ \config -> do
-    -- TODO: Get this from the command line.
-    tLogin <- (config ^. D.loginTwitter) ?? "Missing Twitter key."
+loginTwitter :: FilePath -> Maybe (B.ByteString, B.ByteString) -> Script ()
+loginTwitter configFile keySecret = withConfig configFile $ \config -> do
+    let tLogin = config ^. D.loginTwitter
+    (tKey, tSecret) <- (   keySecret
+                       <|> (   (view ckeyKey &&& view ckeySecret)
+                           <$> tLogin ^? _Just . loginKey)
+                       ) ??  "Missing Twitter key & secret."
 
     let oauth = twitterOAuth
-              { oauthConsumerKey    = tLogin ^. loginKey . ckeyKey
-              , oauthConsumerSecret = tLogin ^. loginKey . ckeySecret
+              { oauthConsumerKey    = tKey -- tLogin ^. loginKey . ckeyKey
+              , oauthConsumerSecret = tSecret -- tLogin ^. loginKey . ckeySecret
               , C.oauthCallback     = Just "oob"
               }
     manager <- scriptIO $ newManager tlsManagerSettings
@@ -52,7 +57,8 @@ loginTwitter configFile = withConfig configFile $ \config -> do
                                         ?? "Missing oauth_token_secret."
 
     return $ config
-           & D.loginTwitter .~ Just (tLogin & loginToken .~ Just ttoken)
+           & D.loginTwitter .~ Just (TwitterLoginInfo (CKey tKey tSecret)
+                                                      $ Just ttoken)
 
 getPIN :: String -> String -> ResourceT IO B.ByteString
 getPIN provider url = liftIO $ do

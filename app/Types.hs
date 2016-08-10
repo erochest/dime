@@ -1,11 +1,13 @@
 module Types where
 
 
-import qualified Data.Text as T
+import           Data.ByteString (ByteString)
+import qualified Data.Text       as T
 
 
 data Actions
-    = TLogin { tLoginConfig :: !FilePath
+    = TLogin { tLoginConfig    :: !FilePath
+             , tLoginKeySecret :: !(Maybe (ByteString, ByteString))
              }
     | GLogin { gLoginConfig :: !FilePath
              }
