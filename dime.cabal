@@ -41,8 +41,10 @@ library
                      , foldl
                      , groom
                      , hoauth2
+                     , http-client
                      , http-conduit
                      , lens
+                     , lens-aeson
                      , monad-control
                      , monad-loops
                      , mtl

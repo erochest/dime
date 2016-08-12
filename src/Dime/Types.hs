@@ -1,28 +1,34 @@
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DeriveGeneric      #-}
-{-# LANGUAGE OverloadedStrings  #-}
-{-# LANGUAGE TemplateHaskell    #-}
-{-# LANGUAGE TypeFamilies       #-}
+{-# LANGUAGE DeriveDataTypeable         #-}
+{-# LANGUAGE DeriveFunctor              #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 
 module Dime.Types where
 
 
-import           Control.Arrow        ((&&&))
-import           Control.Lens         hiding (at, (.=))
+import           Control.Arrow              ((&&&))
+import           Control.Error              (ExceptT (..), Script)
+import           Control.Lens               hiding (at, (.=))
 import           Control.Monad
 import           Control.Monad.Reader
 import           Control.Monad.State
 import           Data.Acid
 import           Data.Aeson
-import           Data.Aeson.Types     (Parser)
-import           Data.ByteString      (ByteString)
+import           Data.Aeson.Types           (Parser)
+import           Data.Bifunctor             (first)
+import           Data.ByteString            (ByteString)
+import qualified Data.ByteString.Lazy.Char8 as L8
 import           Data.Data
 import           Data.SafeCopy
-import qualified Data.Text            as T
+import qualified Data.Text                  as T
 import           Data.Text.Encoding
 import           GHC.Generics
+import           Network.HTTP.Client        (Manager)
 import           Network.OAuth.OAuth2
 import           Web.Twitter.Types
 
@@ -37,6 +43,8 @@ unString Null       = mzero
 
 bsKey :: Object -> T.Text -> Parser ByteString
 bsKey o k = fmap encodeUtf8 . unString =<< o .: k
+
+type UserName = T.Text
 
 data ConsumerKey
     = CKey
@@ -89,34 +97,22 @@ instance ToJSON TwitterLoginInfo where
                                            , "token" .= t
                                            ]
 
-newtype JsonToken = JsonToken { unJsonToken :: AccessToken }
-
-instance ToJSON JsonToken where
-    toJSON (JsonToken (AccessToken at rt ei tt it)) =
-        object [ "access_token"  .=      decodeUtf8 at
-               , "refresh_token" .= fmap decodeUtf8 rt
-               , "expires_in"    .=                 ei
-               , "token_type"    .= fmap decodeUtf8 tt
-               , "id_token"      .= fmap decodeUtf8 it
-               ]
-
-instance FromJSON JsonToken where
-    parseJSON v = JsonToken <$> parseJSON v
-
-data LoginInfo s
+data LoginInfo
     = LoginInfo
     { _loginTwitter :: !(Maybe TwitterLoginInfo)
-    , _loginGmail   :: !(Maybe JsonToken)
+    , _loginGmail   :: !(Maybe ByteString)
     }
 $(makeLenses ''LoginInfo)
 
-instance FromJSON (LoginInfo s) where
-    parseJSON (Object v) = LoginInfo <$> v .:? "twitter" <*> v .:? "gmail"
+instance FromJSON LoginInfo where
+    parseJSON (Object v) =   LoginInfo
+                         <$> v .:? "twitter"
+                         <*> (fmap encodeUtf8 <$> v .:? "gmail")
     parseJSON _          = mzero
 
-instance ToJSON (LoginInfo s) where
+instance ToJSON LoginInfo where
     toJSON (LoginInfo t g) = object [ "twitter" .= t
-                                    , "gmail"   .= g
+                                    , "gmail"   .= fmap decodeUtf8 g
                                     ]
 
 data IdCursor
@@ -156,3 +152,27 @@ queryDMCursor :: Query DMCursor CursorData
 queryDMCursor = (view cursorMaxId &&& view cursorDMs) <$> ask
 
 $(makeAcidic ''DMCursor ['writeDMCursor, 'queryDMCursor])
+
+newtype Google a
+    = Google { unGoogle :: ReaderT (Manager, AccessToken) Script a }
+    deriving ( Functor, Applicative, Monad, MonadReader (Manager, AccessToken)
+             , MonadIO, Generic
+             )
+
+runGoogle :: Manager -> AccessToken -> Google a -> Script a
+runGoogle m at g = runReaderT (unGoogle g) (m, at)
+
+currentManager :: Google Manager
+currentManager = asks fst
+
+currentAccessToken :: Google AccessToken
+currentAccessToken = asks snd
+
+liftE :: Script a -> Google a
+liftE = Google . lift
+
+liftG :: IO (OAuth2Result a) -> Google a
+liftG = liftE . liftSG
+
+liftSG :: IO (OAuth2Result a) -> Script a
+liftSG = ExceptT . fmap (first L8.unpack)

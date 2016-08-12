@@ -60,8 +60,8 @@ foldUntilM p f x = do
 readTWInfo :: FilePath -> Script TWInfo
 readTWInfo = getTWInfo' <=< readConfig
 
-getTWInfo' :: LoginInfo s -> Script TWInfo
-getTWInfo' = (?? "You have to call 'dime login' first.") . getTWInfo
+getTWInfo' :: LoginInfo -> Script TWInfo
+getTWInfo' = (?? "You have to call 'dime twitter-login' first.") . getTWInfo
 
 bothA :: Applicative m => (m a, m b) -> m (a, b)
 bothA (ma, mb) = (,) <$> ma <*> mb

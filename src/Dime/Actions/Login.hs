@@ -17,6 +17,7 @@ import           Data.Bifunctor
 import qualified Data.ByteString              as B
 import qualified Data.ByteString.Char8        as B8
 import qualified Data.ByteString.Lazy.Char8   as L8
+import           Data.Foldable
 import           Network.HTTP.Conduit         hiding (Proxy)
 import           Network.OAuth.OAuth2
 import           System.IO
@@ -27,6 +28,7 @@ import qualified Web.Twitter.Conduit          as C
 
 import           Dime.Auth
 import           Dime.Config
+import           Dime.Google
 import           Dime.Types
 import qualified Dime.Types                   as D
 
@@ -71,22 +73,11 @@ getPIN provider url = liftIO $ do
 
 loginGmail :: FilePath -> Script ()
 loginGmail configFile = withConfig configFile $ \config -> do
-    -- TODO: Get this from the command line or environment
-    let oauth = OAuth2 "994279088207-aicibrrd9vonnfbbk1gcpskvb5qfnn7h\
-                       \.apps.googleusercontent.com"
-                       "B6WSP2OTZso-QO9joatmKcU3"
-                       "https://accounts.google.com/o/oauth2/auth"
-                       "https://accounts.google.com/o/oauth2/token"
-                       (Just "urn:ietf:wg:oauth:2.0:oob")
-        url  = authorizationUrl oauth `appendQueryParam` googleScope
+    let url  = authorizationUrl googleOAuth `appendQueryParam` googleScope
     pin <- scriptIO . runResourceT . getPIN "GMail" $ B8.unpack url
     manager <- scriptIO $ newManager tlsManagerSettings
     aToken <-  ExceptT
            $   first L8.unpack
-           <$> fetchAccessToken manager oauth pin
+           <$> fetchAccessToken manager googleOAuth pin
 
-    return $ config
-           & D.loginGmail .~ Just (JsonToken aToken)
-
-withConfig :: FilePath -> (LoginInfo s -> Script (LoginInfo s)) -> Script ()
-withConfig configFile f = writeConfig configFile =<< f =<< readConfig configFile
+    return $ config & D.loginGmail .~ Just (fold $ refreshToken aToken)

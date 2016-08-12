@@ -15,7 +15,7 @@ import           Web.Twitter.Conduit
 import           Dime.Types
 
 
-getTWInfo :: LoginInfo s -> Maybe TWInfo
+getTWInfo :: LoginInfo -> Maybe TWInfo
 getTWInfo LoginInfo{..} = do
     token  <- _loginTwitter ^? _Just . loginToken . _Just . ttokenToken
     secret <- _loginTwitter ^? _Just . loginToken . _Just . ttokenSecret

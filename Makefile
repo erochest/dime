@@ -33,6 +33,9 @@ dms.json: build
 merged.json:
 	$(RUN) merge --dir archive/ --output $@
 
+gmail:
+	$(RUN) gmail --config=$(CONFIG) --user-index user-index.json --input archive/archive-20160809-184140.json
+
 # package:
 # build a release tarball or executable
 #
@@ -88,4 +91,4 @@ restart: distclean init build
 rebuild: clean build
 
 .PHONY: init run docs configure install hlint clean distclean build test
-.PHONY: bench watch watch-test restart rebuild login count-dms
+.PHONY: bench watch watch-test restart rebuild login count-dms gmail
