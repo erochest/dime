@@ -21,6 +21,7 @@ library
                      , Dime.Auth
                      , Dime.Config
                      , Dime.Google
+                     , Dime.Google.Types
                      , Dime.Resume
                      , Dime.Twitter
                      , Dime.Types

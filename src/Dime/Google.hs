@@ -9,10 +9,13 @@ import           Control.Lens         hiding ((??))
 import           Control.Monad.Reader
 import           Data.Aeson
 import           Data.Aeson.Lens
+import           Data.Monoid
+import           Data.Text.Encoding
 import           Network.HTTP.Conduit hiding (Proxy)
 import           Network.OAuth.OAuth2
 
 import           Dime.Config
+import           Dime.Google.Types
 import           Dime.Types
 
 
@@ -23,6 +26,18 @@ getUser =   liftE
         =<< (getJSON url :: Google Value)
     where
         url = "https://www.googleapis.com/gmail/v1/users/me/profile"
+
+listLabels :: Google [Label]
+listLabels =   _labelsLabels
+           <$> (getJSON url :: Google Labels)
+    where
+        url = "https://www.googleapis.com/gmail/v1/users/me/labels"
+
+getLabel :: LabelId -> Google Label
+getLabel lId =   undefined
+             =<< (getJSON url :: Google Label)
+    where
+        url = "https://www.googleapis.com/gmail/v1/users/me/labels/" <> encodeUtf8 lId
 
 getJSON :: FromJSON a => URI -> Google a
 getJSON uri = do
