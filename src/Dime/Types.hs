@@ -12,9 +12,10 @@ module Dime.Types where
 
 
 import           Control.Arrow              ((&&&))
-import           Control.Error              (ExceptT (..), Script)
+import           Control.Error              (ExceptT (..), Script, throwE)
 import           Control.Lens               hiding (at, (.=))
 import           Control.Monad
+import           Control.Monad.Catch
 import           Control.Monad.Reader
 import           Control.Monad.State
 import           Data.Acid
@@ -158,6 +159,9 @@ newtype Google a
     deriving ( Functor, Applicative, Monad, MonadReader (Manager, AccessToken)
              , MonadIO, Generic
              )
+
+instance MonadThrow Google where
+    throwM = Google . lift . throwE . show
 
 runGoogle :: Manager -> AccessToken -> Google a -> Script a
 runGoogle m at g = runReaderT (unGoogle g) (m, at)

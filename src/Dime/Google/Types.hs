@@ -17,6 +17,17 @@ import qualified Data.Text        as T
 import           GHC.Generics
 
 
+labelOptions :: Int -> Options
+labelOptions n = defaultOptions
+               { fieldLabelModifier = lowerFirst . drop n
+               }
+    where
+        lowerFirst []     = []
+        lowerFirst (x:xs) = toLower x : xs
+
+type LabelId   = T.Text
+type LabelName = T.Text
+
 data MessageListVisibility = ShowMessage | HideMessage
                            deriving (Show, Eq, Data, Typeable, Generic)
 $(makePrisms ''MessageListVisibility)
@@ -58,29 +69,19 @@ instance FromJSON LabelType where
     parseJSON (String "user")   = return User
     parseJSON _                 = mzero
 
-type LabelId = T.Text
-
 data Label
     = Label
     { _labelId                    :: !LabelId
-    , _labelName                  :: !T.Text
+    , _labelName                  :: !LabelName
+    , _labelType                  :: !(Maybe LabelType)
     , _labelMessageListVisibility :: !(Maybe MessageListVisibility)
     , _labelLabelListVisibility   :: !(Maybe LabelListVisibility)
-    , _labelType                  :: !LabelType
     , _labelMessagesTotal         :: !(Maybe Int)
     , _labelMessagesUnread        :: !(Maybe Int)
     , _labelThreadsTotal          :: !(Maybe Int)
     , _labelThreadsUnread         :: !(Maybe Int)
     } deriving (Show, Eq, Data, Typeable, Generic)
 $(makeLenses ''Label)
-
-labelOptions :: Int -> Options
-labelOptions n = defaultOptions
-               { fieldLabelModifier = lowerFirst . drop n
-               }
-    where
-        lowerFirst []     = []
-        lowerFirst (x:xs) = toLower x : xs
 
 instance ToJSON Label where
     toJSON     = genericToJSON     (labelOptions 6)
@@ -100,3 +101,18 @@ instance ToJSON Labels where
 
 instance FromJSON Labels where
     parseJSON = genericParseJSON (labelOptions 7)
+
+data LabelInfo
+    = LabelInfo
+    { _labelInfoName                  :: !LabelName
+    , _labelInfoLabelListVisibility   :: !LabelListVisibility
+    , _labelInfoMessageListVisibility :: !MessageListVisibility
+    } deriving (Show, Eq, Data, Typeable, Generic)
+$(makeLenses ''LabelInfo)
+
+instance ToJSON LabelInfo where
+    toJSON     = genericToJSON     (labelOptions 10)
+    toEncoding = genericToEncoding (labelOptions 10)
+
+instance FromJSON LabelInfo where
+    parseJSON = genericParseJSON (labelOptions 10)

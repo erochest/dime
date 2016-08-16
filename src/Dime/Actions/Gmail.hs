@@ -4,18 +4,20 @@
 module Dime.Actions.Gmail where
 
 
-import           Control.Arrow
 import           Control.Error
 import           Control.Monad.IO.Class
-import qualified Data.Text              as T
 import qualified Data.Text.IO           as TIO
 
 import           Dime.Google
+import qualified Dime.Google.Labels     as Labels
+import           Dime.Google.Network
 import           Dime.Google.Types
 
 
-archiveGmail :: FilePath -> FilePath -> FilePath -> T.Text -> Script ()
-archiveGmail configFile _userIndex _archive _label = runGoogle' configFile $ do
+archiveGmail :: FilePath -> FilePath -> FilePath -> LabelName -> Script ()
+archiveGmail configFile _userIndex _archive label = runGoogle' configFile $ do
     liftIO . TIO.putStrLn . mappend "You are: " =<< getUser
-    liftIO . TIO.putStrLn $ "Labels:"
-    liftIO . mapM_ (print . (_labelId &&& _labelName)) =<< listLabels
+    twitterLabel <- Labels.ensure label
+    liftIO $ print twitterLabel
+
+    undefined
