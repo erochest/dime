@@ -25,6 +25,20 @@ archiveGmail configFile _userIndex _archive label = runGoogle' configFile $ do
     threads <- Threads.list [_labelId twitterLabel] Nothing Nothing Nothing
     liftIO $ print threads
 
-    -- TODO: sketch out process
+    -- 1. get the thread id:
+    --    * filter out full threads
+    --    * get the latest thread's ID
+    --    * get the last message in the thread or the last message in that label
+    -- 2. read in the user index
+    -- 3. read in the archive
+    --    * based on the last message found, filter out the messages that have
+    --      already been inserted
+    -- 4. replace twitter handles with email addresses
+    -- 5. format each tweet as rfc 822 email and create metadata
+    --    * (get some SMS messages and look at their metadata)
+    -- 6. chunk tweets into threads
+    -- 7. submit thread
+    --    * submit each message
+    --    * carry the threadid through all messages
 
     undefined
