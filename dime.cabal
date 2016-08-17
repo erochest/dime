@@ -22,7 +22,9 @@ library
                      , Dime.Config
                      , Dime.Google
                      , Dime.Google.Labels
+                     , Dime.Google.Messages
                      , Dime.Google.Network
+                     , Dime.Google.Threads
                      , Dime.Google.Types
                      , Dime.Resume
                      , Dime.Twitter
@@ -47,6 +49,7 @@ library
                      , hoauth2
                      , http-client
                      , http-conduit
+                     , http-types
                      , lens
                      , lens-aeson
                      , monad-control

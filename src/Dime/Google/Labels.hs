@@ -6,6 +6,7 @@ module Dime.Google.Labels where
 
 import           Control.Arrow
 import           Control.Error
+import           Data.Aeson
 import qualified Data.HashMap.Strict as M
 import           Data.Monoid
 import           Data.Text.Encoding
@@ -27,7 +28,8 @@ get lId = getJSON $  "https://www.googleapis.com/gmail/v1/users/me/labels/"
 create :: LabelInfo -> Google Label
 create lInfo =
     maybe (liftE $ throwE "Invalid label info.") return
-        =<< postJSON "https://www.googleapis.com/gmail/v1/users/me/labels" lInfo
+        =<< postJSON "https://www.googleapis.com/gmail/v1/users/me/labels"
+                     (toJSON lInfo)
 
 
 ensure :: LabelName -> Google Label
