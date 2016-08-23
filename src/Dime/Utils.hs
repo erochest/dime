@@ -2,10 +2,16 @@ module Dime.Utils where
 
 
 import           Control.Arrow
+import           Control.Concurrent
 import           Control.Error
-import           Control.Monad             ((<=<))
+import           Control.Monad
+import           Control.Monad.IO.Class
 import           Data.Foldable
 import qualified Data.HashMap.Strict       as M
+import qualified Data.Text                 as T
+import           Data.Time
+import           Data.UUID                 (UUID)
+import           Data.UUID.V1
 import           Debug.Trace
 import           System.Directory
 import           System.FilePath
@@ -17,9 +23,6 @@ import           Dime.Auth
 import           Dime.Config
 import           Dime.Types
 
-
-putStrLn' :: String -> Script ()
-putStrLn' = scriptIO . putStrLn
 
 walkDirectoryTree :: FilePath -> Script [FilePath]
 walkDirectoryTree dirname = do
@@ -47,6 +50,14 @@ watchM msg x = do
     traceM $ msg ++ groom x
     return x
 
+watchFM :: Monad m => String -> (a -> String) -> a -> m a
+watchFM msg f x = do
+    traceM $ msg ++ f x
+    return x
+
+watchF :: Show b => String -> (a -> b) -> a -> a
+watchF msg f x = trace (msg ++ groom (f x)) x
+
 dedupDM :: [DirectMessage] -> [DirectMessage]
 dedupDM = toList . M.fromList . fmap (dmId &&& id)
 
@@ -65,3 +76,25 @@ getTWInfo' = (?? "You have to call 'dime twitter-login' first.") . getTWInfo
 
 bothA :: Applicative m => (m a, m b) -> m (a, b)
 bothA (ma, mb) = (,) <$> ma <*> mb
+
+boolM :: MonadPlus m => (a -> Bool) -> a -> m a
+boolM p a
+    | p a       = return a
+    | otherwise = mzero
+
+print' :: (MonadIO m, Show a) => a -> m ()
+print'    = liftIO . print
+
+putStrLn' :: MonadIO m => String -> m ()
+putStrLn' = liftIO . putStrLn
+
+rfc822Date :: UTCTime -> T.Text
+rfc822Date = T.pack . formatTime defaultTimeLocale rfc822DateFormat
+
+uuid :: MonadIO m => m UUID
+uuid = do
+    u' <- liftIO nextUUID
+    case u' of
+         Just u  -> return u
+         Nothing -> liftIO (threadDelay 100) >> uuid
+

@@ -4,8 +4,10 @@
 module Dime.Google.Threads where
 
 
+import           Data.Foldable
 import           Data.Maybe
 import           Data.Monoid
+import qualified Data.Sequence       as Seq
 import           Data.Text.Encoding
 
 import           Dime.Google.Network
@@ -28,3 +30,12 @@ list labelIds maxResults pageToken q =
                     ]
     where
         url = "https://www.googleapis.com/gmail/v1/users/me/threads"
+
+listAll :: [LabelId] -> Maybe Query -> Google [Thread]
+listAll labelIds q = toList <$> go Nothing
+    where
+        go pt = do
+            tl <- list labelIds Nothing pt q
+            let ts = Seq.fromList . fold $ _threadsThreads tl
+            mappend ts <$> maybe (return mempty) (go . Just)
+                                 (_threadsNextPageToken tl)

@@ -6,25 +6,30 @@ module Dime.Google.Network where
 
 
 import           Control.Error
-import           Control.Lens          hiding ((??))
+import           Control.Lens               hiding ((??))
 import           Control.Monad.Reader
 import           Data.Aeson
-import qualified Data.ByteString.Char8 as B8
+import qualified Data.ByteString.Char8      as B8
 import           Data.Foldable
-import qualified Data.Text             as T
-import           Network.HTTP.Conduit  hiding (Proxy, responseBody)
+import qualified Data.Text                  as T
+import           Network.HTTP.Conduit       hiding (Proxy, responseBody)
 import           Network.OAuth.OAuth2
 import           Network.Wreq
-import           Network.Wreq.Types    hiding (auth, manager)
+import           Network.Wreq.Types         hiding (auth, manager)
 
+import qualified Data.ByteString.Lazy.Char8 as BL8
 import           Dime.Config
 import           Dime.Types
+import           Dime.Utils
 
 
 getJSON :: FromJSON a => URI -> Google a
 getJSON uri = do
     (m, t) <- ask
-    liftG $ authGetJSON m t uri
+    let opts = defaults
+             & manager .~ Right m
+             & auth ?~ oauth2Bearer (accessToken t)
+    fmap (view responseBody) . asJSON =<< liftIO (getWith opts (B8.unpack uri))
 
 getJSON' :: FromJSON a => URI -> [(T.Text, [T.Text])] -> Google a
 getJSON' uri ps = do
@@ -33,7 +38,7 @@ getJSON' uri ps = do
               & manager .~ Right m
               & auth ?~ oauth2Bearer (accessToken t)
         opts  = foldl' setp opts' ps
-    fmap (view responseBody) . asJSON =<< liftIO (getWith opts (B8.unpack uri))
+    fmap (view responseBody) . asJSON =<< watchFM "getJSON' " (BL8.unpack . view responseBody) =<< liftIO (getWith opts (B8.unpack uri))
 
 postJSON :: (Postable a, FromJSON b) => URI -> a -> Google b
 postJSON uri d = do

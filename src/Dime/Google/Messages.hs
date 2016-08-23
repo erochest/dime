@@ -12,6 +12,7 @@ import           Data.Foldable
 import qualified Data.HashSet         as S
 import           Data.Maybe
 import           Data.Monoid
+import qualified Data.Sequence        as Seq
 import           Data.Text.Encoding
 import           Network.Wreq
 
@@ -52,3 +53,12 @@ list labelIds maxResults pageToken q =
                     ]
     where
         url = "https://www.googleapis.com/gmail/v1/users/me/messages"
+
+listAll :: [LabelId] -> Maybe Query -> Google [MessageShort]
+listAll labelIds q = toList <$> go Nothing
+    where
+        go pt = do
+            ml <- list labelIds Nothing pt q
+            let ms = Seq.fromList $ _messagesMessages ml
+            mappend ms <$> maybe (return mempty) (go . Just)
+                                 (_messagesNextPageToken ml)

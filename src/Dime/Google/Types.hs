@@ -40,7 +40,7 @@ type PageToken    = T.Text
 type Query        = T.Text
 type MessageId    = T.Text
 type MessageRaw   = T.Text
-type HistoryId    = Integer
+type HistoryId    = T.Text
 type AttachmentId = T.Text
 
 data MessageListVisibility = ShowMessage | HideMessage
@@ -159,7 +159,7 @@ instance FromJSON Header where
 
 data Attachment
     = Attachment
-    { _attachmentId   :: !AttachmentId
+    { _attachmentId   :: !(Maybe AttachmentId)
     , _attachmentSize :: !Int
     , _attachmentData :: !JSBytes
     } deriving (Show, Eq, Data, Typeable, Generic)
@@ -194,8 +194,8 @@ data Payload
     , _payloadMimeType :: !T.Text
     , _payloadFilename :: !T.Text
     , _payloadHeaders  :: ![Header]
-    , _payloadBody     :: ![Attachment]
-    , _payloadParts    :: ![MessagePart]
+    , _payloadBody     :: !Attachment
+    , _payloadParts    :: !(Maybe [MessagePart])
     } deriving (Show, Eq, Data, Typeable, Generic)
 $(makeLenses ''Payload)
 
@@ -237,17 +237,31 @@ instance ToJSON RawMessage where
 instance FromJSON RawMessage where
     parseJSON = genericParseJSON (googleOptions 11)
 
+data MessageShort
+    = MessageShort
+    { _messageShortId           :: !MessageId
+    , _messageShortThreadId     :: !ThreadId
+    , _messageShortInternalDate :: !T.Text
+    } deriving (Show, Eq, Data, Typeable, Generic)
+
+instance ToJSON MessageShort where
+    toJSON     = genericToJSON     (googleOptions 13)
+    toEncoding = genericToEncoding (googleOptions 13)
+
+instance FromJSON MessageShort where
+    parseJSON = genericParseJSON (googleOptions 13)
+
 data Message
     = Message
     { _messageId           :: !MessageId
     , _messageThreadId     :: !ThreadId
     , _messageLabelIds     :: ![LabelId]
-    , _messageSnippet      :: !T.Text
+    , _messageSnippet      :: !(Maybe T.Text)
     , _messageHistoryId    :: !HistoryId
-    , _messageInternalDate :: !Int
+    , _messageInternalDate :: !T.Text
     , _messagePayload      :: !Payload
     , _messageSizeEstimate :: !Int
-    , _messageRaw          :: !JSBytes
+    , _messageRaw          :: !(Maybe JSBytes)
     } deriving (Show, Eq, Data, Typeable, Generic)
 $(makeLenses ''Message)
 
@@ -263,7 +277,7 @@ data MessageInfo
     { _messageInfoThreadId     :: !(Maybe ThreadId)
     , _messageInfoLabelIds     :: !(Maybe [LabelId])
     , _messageInfoPayload      :: !PayloadInfo
-    , _messageInfoRaw          :: !JSBytes
+    , _messageInfoRaw          :: !(Maybe JSBytes)
     } deriving (Show, Eq, Data, Typeable, Generic)
 $(makeLenses ''MessageInfo)
 
@@ -279,7 +293,7 @@ data Thread
     { _threadId        :: !ThreadId
     , _threadSnippet   :: !T.Text
     , _threadHistoryId :: !HistoryId
-    , _threadMessages  :: ![Message]
+    , _threadMessages  :: !(Maybe [Message])
     } deriving (Show, Eq, Data, Typeable, Generic)
 $(makeLenses ''Thread)
 
@@ -292,8 +306,8 @@ instance FromJSON Thread where
 
 data MessageList
     = MessageList
-    { _messagesMessages           :: ![Message]
-    , _messagesNextPageToken      :: !PageToken
+    { _messagesMessages           :: ![MessageShort]
+    , _messagesNextPageToken      :: !(Maybe PageToken)
     , _messagesResultSizeEstimate :: !Int
     } deriving (Show, Eq, Data, Typeable, Generic)
 $(makeLenses ''MessageList)
@@ -338,3 +352,17 @@ instance Postable MultipartRelated where
                     : filter (\(x, _) -> x /= hContentType) (requestHeaders req)
                , requestBody = body
                }
+
+data Contact
+    = Contact
+    { _contactName  :: !T.Text
+    , _contactEmail :: !T.Text
+    } deriving (Show, Eq, Data, Typeable, Generic)
+$(makeLenses ''Contact)
+
+instance ToJSON Contact where
+    toJSON     = genericToJSON     (googleOptions 8)
+    toEncoding = genericToEncoding (googleOptions 8)
+
+instance FromJSON Contact where
+    parseJSON = genericParseJSON (googleOptions 8)

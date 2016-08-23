@@ -36,22 +36,27 @@ library
                      , acid-state
                      , aeson
                      , authenticate-oauth
+                     , blaze-builder
+                     , base64-bytestring
                      , bytestring
                      , conduit
                      , conduit-combinators
                      , conduit-extra
+                     , containers
                      , directory
                      , errors
                      , exceptions
                      , filepath
                      , foldl
                      , groom
+                     , hashable
                      , hoauth2
                      , http-client
                      , http-conduit
                      , http-types
                      , lens
                      , lens-aeson
+                     , mime-mail
                      , monad-control
                      , monad-loops
                      , mtl
@@ -67,6 +72,7 @@ library
                      , twitter-conduit
                      , twitter-types
                      , twitter-types-lens
+                     , uuid
                      , wreq
                      , unordered-containers
   hs-source-dirs:      src
