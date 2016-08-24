@@ -18,7 +18,6 @@ import           Network.Wreq
 
 import           Dime.Google.Network
 import           Dime.Google.Types
-import           Dime.Types
 
 
 get :: MessageId -> Google Message

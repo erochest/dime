@@ -42,7 +42,6 @@ import qualified Dime.Google.Messages   as Messages
 import           Dime.Google.Network
 import qualified Dime.Google.Threads    as Threads
 import           Dime.Google.Types
-import           Dime.Types
 import           Dime.Utils
 
 

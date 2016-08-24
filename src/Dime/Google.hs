@@ -10,6 +10,7 @@ import           Data.Aeson
 import           Data.Aeson.Lens
 
 import           Dime.Google.Network
+import           Dime.Google.Types
 import           Dime.Types
 
 

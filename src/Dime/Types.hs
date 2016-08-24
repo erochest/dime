@@ -11,26 +11,20 @@
 module Dime.Types where
 
 
-import           Control.Arrow              ((&&&))
-import           Control.Error              (ExceptT (..), Script, throwE)
-import           Control.Lens               hiding (at, (.=))
+import           Control.Arrow        ((&&&))
+import           Control.Lens         hiding (at, (.=))
 import           Control.Monad
-import           Control.Monad.Catch
 import           Control.Monad.Reader
 import           Control.Monad.State
 import           Data.Acid
 import           Data.Aeson
-import           Data.Aeson.Types           (Parser)
-import           Data.Bifunctor             (first)
-import           Data.ByteString            (ByteString)
-import qualified Data.ByteString.Lazy.Char8 as L8
+import           Data.Aeson.Types     (Parser)
+import           Data.ByteString      (ByteString)
 import           Data.Data
 import           Data.SafeCopy
-import qualified Data.Text                  as T
+import qualified Data.Text            as T
 import           Data.Text.Encoding
 import           GHC.Generics
-import           Network.HTTP.Client        (Manager)
-import           Network.OAuth.OAuth2
 import           Web.Twitter.Types
 
 
@@ -153,30 +147,3 @@ queryDMCursor :: Query DMCursor CursorData
 queryDMCursor = (view cursorMaxId &&& view cursorDMs) <$> ask
 
 $(makeAcidic ''DMCursor ['writeDMCursor, 'queryDMCursor])
-
-newtype Google a
-    = Google { unGoogle :: ReaderT (Manager, AccessToken) Script a }
-    deriving ( Functor, Applicative, Monad, MonadReader (Manager, AccessToken)
-             , MonadIO, Generic
-             )
-
-instance MonadThrow Google where
-    throwM = Google . lift . throwE . show
-
-runGoogle :: Manager -> AccessToken -> Google a -> Script a
-runGoogle m at g = runReaderT (unGoogle g) (m, at)
-
-currentManager :: Google Manager
-currentManager = asks fst
-
-currentAccessToken :: Google AccessToken
-currentAccessToken = asks snd
-
-liftE :: Script a -> Google a
-liftE = Google . lift
-
-liftG :: IO (OAuth2Result a) -> Google a
-liftG = liftE . liftSG
-
-liftSG :: IO (OAuth2Result a) -> Script a
-liftSG = ExceptT . fmap (first L8.unpack)

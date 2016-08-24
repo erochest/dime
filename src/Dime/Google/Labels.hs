@@ -14,7 +14,6 @@ import           Data.Text.Encoding
 
 import           Dime.Google.Network
 import           Dime.Google.Types
-import           Dime.Types
 
 
 list :: Google [Label]

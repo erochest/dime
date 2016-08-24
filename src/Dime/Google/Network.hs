@@ -19,6 +19,7 @@ import           Network.Wreq.Types         hiding (auth, manager)
 
 import qualified Data.ByteString.Lazy.Char8 as BL8
 import           Dime.Config
+import           Dime.Google.Types
 import           Dime.Types
 import           Dime.Utils
 

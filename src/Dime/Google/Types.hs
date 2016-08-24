@@ -1,17 +1,26 @@
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DeriveGeneric      #-}
-{-# LANGUAGE OverloadedStrings  #-}
-{-# LANGUAGE TemplateHaskell    #-}
+{-# LANGUAGE DeriveDataTypeable         #-}
+{-# LANGUAGE DeriveFunctor              #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE TemplateHaskell            #-}
 
 
 module Dime.Google.Types where
 
 
+import           Control.Error                         (ExceptT (..), Script,
+                                                        throwE)
 import           Control.Lens
 import           Control.Monad
+import           Control.Monad.Catch
+import           Control.Monad.IO.Class
+import           Control.Monad.Reader
 import           Data.Aeson
 import           Data.Aeson.Types
+import           Data.Bifunctor                        (first)
 import           Data.ByteString                       (ByteString)
+import qualified Data.ByteString.Lazy.Char8            as L8
 import           Data.Char
 import           Data.Data
 import           Data.Monoid                           ((<>))
@@ -22,8 +31,42 @@ import           Network.HTTP.Client.Internal          hiding ((<>))
 import           Network.HTTP.Client.MultipartFormData
 import           Network.HTTP.Types.Header             (hContentType)
 import           Network.HTTP.Types.Method
+import           Network.OAuth.OAuth2
 import           Network.Wreq.Types                    hiding (Options, Payload)
 
+
+-- * Google monad
+
+newtype Google a
+    = Google { unGoogle :: ReaderT (Manager, AccessToken) Script a }
+    deriving ( Functor, Applicative, Monad, MonadReader (Manager, AccessToken)
+             , MonadIO, Generic
+             )
+
+instance MonadThrow Google where
+    throwM = Google . lift . throwE . show
+
+runGoogle :: Manager -> AccessToken -> Google a -> Script a
+runGoogle m t g = runReaderT (unGoogle g) (m, t)
+
+currentManager :: Google Manager
+currentManager = asks fst
+
+currentAccessToken :: Google AccessToken
+currentAccessToken = asks snd
+
+liftE :: Script a -> Google a
+liftE = Google . lift
+
+liftG :: IO (OAuth2Result a) -> Google a
+liftG = liftE . liftSG
+
+liftSG :: IO (OAuth2Result a) -> Script a
+liftSG = ExceptT . fmap (first L8.unpack)
+
+-- * Google data types
+
+-- ** Utilities
 
 googleOptions :: Int -> Options
 googleOptions n = defaultOptions
@@ -32,6 +75,8 @@ googleOptions n = defaultOptions
     where
         lowerFirst []     = []
         lowerFirst (x:xs) = toLower x : xs
+
+-- ** Type aliases
 
 type LabelId      = T.Text
 type LabelName    = T.Text
@@ -42,6 +87,24 @@ type MessageId    = T.Text
 type MessageRaw   = T.Text
 type HistoryId    = T.Text
 type AttachmentId = T.Text
+
+-- ** Types
+-- *** JSBytes (ByteString wrapper)
+
+newtype JSBytes = JSBytes { unBytes :: ByteString }
+                deriving (Show, Eq, Data, Typeable, Generic)
+$(makeLenses ''JSBytes)
+
+instance ToJSON JSBytes where
+    toJSON = String . decodeUtf8 . unBytes
+
+instance FromJSON JSBytes where
+    parseJSON (String s) = return . JSBytes $ encodeUtf8 s
+    parseJSON _          = mzero
+
+type MessagePart  = JSBytes
+
+-- *** Label
 
 data MessageListVisibility = ShowMessage | HideMessage
                            deriving (Show, Eq, Data, Typeable, Generic)
@@ -132,16 +195,7 @@ instance ToJSON LabelInfo where
 instance FromJSON LabelInfo where
     parseJSON = genericParseJSON (googleOptions 10)
 
-newtype JSBytes = JSBytes { unBytes :: ByteString }
-                deriving (Show, Eq, Data, Typeable, Generic)
-$(makeLenses ''JSBytes)
-
-instance ToJSON JSBytes where
-    toJSON = String . decodeUtf8 . unBytes
-
-instance FromJSON JSBytes where
-    parseJSON (String s) = return . JSBytes $ encodeUtf8 s
-    parseJSON _          = mzero
+-- *** Header
 
 data Header
     = Header
@@ -156,6 +210,8 @@ instance ToJSON Header where
 
 instance FromJSON Header where
     parseJSON = genericParseJSON (googleOptions 7)
+
+-- *** Attachment
 
 data Attachment
     = Attachment
@@ -186,7 +242,7 @@ instance ToJSON AttachmentInfo where
 instance FromJSON AttachmentInfo where
     parseJSON = genericParseJSON (googleOptions 15)
 
-type MessagePart = JSBytes
+-- *** Payload
 
 data Payload
     = Payload
@@ -223,6 +279,8 @@ instance ToJSON PayloadInfo where
 instance FromJSON PayloadInfo where
     parseJSON = genericParseJSON (googleOptions 12)
 
+-- *** RawMessage
+
 data RawMessage
     = RawMessage
     { _rawMessageRaw      :: !JSBytes
@@ -236,6 +294,8 @@ instance ToJSON RawMessage where
 
 instance FromJSON RawMessage where
     parseJSON = genericParseJSON (googleOptions 11)
+
+-- *** Messages
 
 data MessageShort
     = MessageShort
@@ -274,10 +334,10 @@ instance FromJSON Message where
 
 data MessageInfo
     = MessageInfo
-    { _messageInfoThreadId     :: !(Maybe ThreadId)
-    , _messageInfoLabelIds     :: !(Maybe [LabelId])
-    , _messageInfoPayload      :: !PayloadInfo
-    , _messageInfoRaw          :: !(Maybe JSBytes)
+    { _messageInfoThreadId :: !(Maybe ThreadId)
+    , _messageInfoLabelIds :: !(Maybe [LabelId])
+    , _messageInfoPayload  :: !PayloadInfo
+    , _messageInfoRaw      :: !(Maybe JSBytes)
     } deriving (Show, Eq, Data, Typeable, Generic)
 $(makeLenses ''MessageInfo)
 
@@ -287,6 +347,23 @@ instance ToJSON MessageInfo where
 
 instance FromJSON MessageInfo where
     parseJSON = genericParseJSON (googleOptions 12)
+
+data MessageList
+    = MessageList
+    { _messagesMessages           :: ![MessageShort]
+    , _messagesNextPageToken      :: !(Maybe PageToken)
+    , _messagesResultSizeEstimate :: !Int
+    } deriving (Show, Eq, Data, Typeable, Generic)
+$(makeLenses ''MessageList)
+
+instance ToJSON MessageList where
+    toJSON     = genericToJSON     (googleOptions 9)
+    toEncoding = genericToEncoding (googleOptions 9)
+
+instance FromJSON MessageList where
+    parseJSON = genericParseJSON (googleOptions 9)
+
+-- *** Thread
 
 data Thread
     = Thread
@@ -304,21 +381,6 @@ instance ToJSON Thread where
 instance FromJSON Thread where
     parseJSON = genericParseJSON (googleOptions 7)
 
-data MessageList
-    = MessageList
-    { _messagesMessages           :: ![MessageShort]
-    , _messagesNextPageToken      :: !(Maybe PageToken)
-    , _messagesResultSizeEstimate :: !Int
-    } deriving (Show, Eq, Data, Typeable, Generic)
-$(makeLenses ''MessageList)
-
-instance ToJSON MessageList where
-    toJSON     = genericToJSON     (googleOptions 9)
-    toEncoding = genericToEncoding (googleOptions 9)
-
-instance FromJSON MessageList where
-    parseJSON = genericParseJSON (googleOptions 9)
-
 data ThreadList
     = ThreadList
     { _threadsThreads            :: !(Maybe [Thread])
@@ -333,6 +395,8 @@ instance ToJSON ThreadList where
 
 instance FromJSON ThreadList where
     parseJSON = genericParseJSON (googleOptions 8)
+
+-- *** MultipartRelated
 
 newtype MultipartRelated = MultiRelated { unRelate :: [Part] }
                          deriving (Show, Typeable, Generic)
@@ -352,6 +416,8 @@ instance Postable MultipartRelated where
                     : filter (\(x, _) -> x /= hContentType) (requestHeaders req)
                , requestBody = body
                }
+
+-- *** Contact
 
 data Contact
     = Contact
