@@ -19,3 +19,4 @@ cabal.sandbox.config
 .twitter.json
 *.json
 .dime-*/
+*.out
