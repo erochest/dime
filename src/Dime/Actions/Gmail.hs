@@ -37,6 +37,7 @@ import           Text.Groom
 import           Web.Twitter.Types.Lens
 
 import           Dime.Google
+import           Dime.Google.DSL        (batchActions, singleActions)
 import qualified Dime.Google.Labels     as Labels
 import qualified Dime.Google.Messages   as Messages
 import           Dime.Google.Network
@@ -71,13 +72,13 @@ archiveGmail :: FilePath -> FilePath -> FilePath -> LabelName -> Script ()
 archiveGmail configFile userFile archive label = runGoogle' configFile $ do
     liftIO . TIO.putStrLn . mappend "You are: " =<< getUser
 
-    twitterLabelId <- _labelId <$> Labels.ensure label
+    twitterLabelId <- singleActions $ _labelId <$> Labels.ensure label
     print' twitterLabelId
 
     dumpSMS
 
     messages <-  fmap (L.sortBy (comparing _messageInternalDate))
-             .   mapM (Messages.get . _messageShortId)
+             .   batchActions . mapM (Messages.get . _messageShortId)
              =<< Messages.listAll [twitterLabelId] Nothing
     threads  <-  M.fromList . map (_threadId &&& id)
              <$> Threads.listAll [twitterLabelId] Nothing
@@ -165,7 +166,8 @@ insertThread current ms = toList . snd <$> foldlM step (current, Seq.empty) ms
              -> Google (Maybe (ThreadId, MessageId), Seq.Seq Message)
         step (t, accum) (mi, m) = do
             let (mi', m') = thread t mi m
-            message <-  Messages.insert (watchF "INSERTING " (dumpMI m') mi')
+            message <-  singleActions
+                    .   Messages.insert (watchF "INSERTING " (dumpMI m') mi')
                     =<< toRaw mi' m'
             return (Just (message ^. messageThreadId, message ^. messageId)
                    , accum |> message
@@ -201,12 +203,14 @@ insertThread current ms = toList . snd <$> foldlM step (current, Seq.empty) ms
 
 dumpSMS :: Google ()
 dumpSMS = do
-    labelIndex <- Labels.index
-    sms <- Messages.list (mapMaybe (`M.lookup` labelIndex) ["SMS"]) (Just 25)
+    labelIndex <- singleActions Labels.index
+    sms <- singleActions
+        $  Messages.list (mapMaybe (`M.lookup` labelIndex) ["SMS"]) (Just 25)
                          Nothing Nothing
     putStrLn' "SMS"
     putStrLn' . groom
-        =<< mapM (Messages.get . _messageShortId) (_messagesMessages sms)
+        =<< batchActions
+            (mapM (Messages.get . _messageShortId) $ _messagesMessages sms)
 
 readJSON :: FromJSON a => FilePath -> Google a
 readJSON =   liftE . hoistEither . eitherDecodeStrict'

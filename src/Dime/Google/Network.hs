@@ -6,10 +6,12 @@ module Dime.Google.Network where
 
 
 import           Control.Error
+import           Control.Exception          (displayException)
 import           Control.Lens               hiding ((??))
 import           Control.Monad.Reader
 import           Data.Aeson
 import qualified Data.ByteString.Char8      as B8
+import qualified Data.ByteString.Lazy.Char8 as BL8
 import           Data.Foldable
 import qualified Data.Text                  as T
 import           Network.HTTP.Conduit       hiding (Proxy, responseBody)
@@ -17,12 +19,22 @@ import           Network.OAuth.OAuth2
 import           Network.Wreq
 import           Network.Wreq.Types         hiding (auth, manager)
 
-import qualified Data.ByteString.Lazy.Char8 as BL8
 import           Dime.Config
 import           Dime.Google.Types
 import           Dime.Types
-import           Dime.Utils
 
+
+baseURL :: URI
+baseURL = "https://www.googleapis.com"
+
+normURL :: URI -> String
+normURL = B8.unpack . mappend baseURL
+
+asJSON' :: FromJSON a => Response BL8.ByteString -> Google a
+asJSON' = liftE
+        . hoistEither
+        . (displayException `bimap` view responseBody)
+        . asJSON
 
 getJSON :: FromJSON a => URI -> Google a
 getJSON uri = do
@@ -30,16 +42,16 @@ getJSON uri = do
     let opts = defaults
              & manager .~ Right m
              & auth ?~ oauth2Bearer (accessToken t)
-    fmap (view responseBody) . asJSON =<< liftIO (getWith opts (B8.unpack uri))
+    asJSON' =<< liftIO (getWith opts (normURL uri))
 
-getJSON' :: FromJSON a => URI -> [(T.Text, [T.Text])] -> Google a
+getJSON' :: FromJSON a => URI -> [GetParam] -> Google a
 getJSON' uri ps = do
     (m, t) <- ask
     let opts' = defaults
               & manager .~ Right m
               & auth ?~ oauth2Bearer (accessToken t)
         opts  = foldl' setp opts' ps
-    fmap (view responseBody) . asJSON =<< watchFM "getJSON' " (BL8.unpack . view responseBody) =<< liftIO (getWith opts (B8.unpack uri))
+    asJSON' =<< liftIO (getWith opts (normURL uri))
 
 postJSON :: (Postable a, FromJSON b) => URI -> a -> Google b
 postJSON uri d = do
@@ -47,19 +59,17 @@ postJSON uri d = do
     let opts = defaults
              & manager .~ Right m
              & auth ?~ oauth2Bearer (accessToken t)
-    fmap (view responseBody) . asJSON
-        =<< liftIO (postWith opts (B8.unpack uri) d)
+    asJSON' =<< liftIO (postWith opts (normURL uri) d)
 
 postJSON' :: (Postable a, FromJSON b)
-          => URI -> [(T.Text, [T.Text])] -> a -> Google b
+          => URI -> [GetParam] -> a -> Google b
 postJSON' uri ps d = do
     (m, t) <- ask
     let opts' = defaults
               & manager .~ Right m
               & auth ?~ oauth2Bearer (accessToken t)
         opts  = foldl' setp opts' ps
-    fmap (view responseBody) . asJSON
-        =<< liftIO (postWith opts (B8.unpack uri) d)
+    asJSON' =<< liftIO (postWith opts (normURL uri) d)
 
 googleOAuth :: OAuth2
 googleOAuth = OAuth2 "994279088207-aicibrrd9vonnfbbk1gcpskvb5qfnn7h\
@@ -77,12 +87,12 @@ runGoogle' configFile a = withConfig' configFile $ \config -> do
     token'  <- liftSG $  fetchRefreshToken m googleOAuth refresh
     runGoogle m token' a
 
-maybeParam :: Show a => T.Text -> Maybe a -> Maybe (T.Text, [T.Text])
+maybeParam :: Show a => T.Text -> Maybe a -> Maybe GetParam
 maybeParam n = fmap ((n,) . pure . T.pack . show)
 
-maybeList :: T.Text -> [T.Text] -> Maybe (T.Text, [T.Text])
+maybeList :: T.Text -> [T.Text] -> Maybe GetParam
 maybeList _ [] = Nothing
 maybeList n vs = Just (n, vs)
 
-setp :: Options -> (T.Text, [T.Text]) -> Options
+setp :: Options -> GetParam -> Options
 setp o (n, vs) = o & param n .~ vs

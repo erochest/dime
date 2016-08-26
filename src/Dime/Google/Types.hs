@@ -1,8 +1,11 @@
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE TemplateHaskell            #-}
 
 
@@ -16,6 +19,7 @@ import           Control.Monad
 import           Control.Monad.Catch
 import           Control.Monad.IO.Class
 import           Control.Monad.Reader
+import           Control.Monad.Free
 import           Data.Aeson
 import           Data.Aeson.Types
 import           Data.Bifunctor                        (first)
@@ -63,6 +67,26 @@ liftG = liftE . liftSG
 
 liftSG :: IO (OAuth2Result a) -> Script a
 liftSG = ExceptT . fmap (first L8.unpack)
+
+-- * Google DSL
+
+type GetParam = (T.Text, [T.Text])
+
+-- TODO: Can I add a phantom type that will allow me to say when batch actions
+-- aren't appropriate? How would combining these work?
+-- TODO: Or even better, to trace dependencies between calls automatically and
+-- use that to know when actions can be batched?
+data GoogleActionF a where
+    GGet  :: FromJSON response
+          => URI -> [GetParam]         -> (response -> a) -> GoogleActionF a
+    GPost :: (FromJSON response, Postable post)
+          => URI -> [GetParam] -> post -> (response -> a) -> GoogleActionF a
+
+instance Functor GoogleActionF where
+    fmap f (GGet  uri ps   r) = GGet  uri ps   $ f . r
+    fmap f (GPost uri ps p r) = GPost uri ps p $ f . r
+
+type GoogleAction n = Free GoogleActionF n
 
 -- * Google data types
 

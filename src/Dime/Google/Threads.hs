@@ -10,28 +10,31 @@ import           Data.Monoid
 import qualified Data.Sequence       as Seq
 import           Data.Text.Encoding
 
+import           Dime.Google.DSL
+import qualified Dime.Google.DSL     as DSL
 import           Dime.Google.Network
 import           Dime.Google.Types
 
 
-get :: ThreadId -> Google Thread
-get tId = getJSON $  "https://www.googleapis.com/gmail/v1/users/me/threads/"
-                  <> encodeUtf8 tId
+get :: ThreadId -> GoogleAction Thread
+get tId = DSL.get url []
+    where
+        -- url = "https://www.googleapis.com/gmail/v1/users/me/threads/"
+        url = "/gmail/v1/users/me/threads/" <> encodeUtf8 tId
 
 list :: [LabelId] -> Maybe Int -> Maybe PageToken -> Maybe Query
-     -> Google ThreadList
+     -> GoogleAction ThreadList
 list labelIds maxResults pageToken q =
-    getJSON' url
-        $ catMaybes [ maybeParam "maxResults" maxResults
-                    , maybeParam "pageToken"  pageToken
-                    , maybeParam "q"          q
-                    , maybeList  "labelIds"   labelIds
-                    ]
+    DSL.get url $ catMaybes [ maybeParam "maxResults" maxResults
+                            , maybeParam "pageToken"  pageToken
+                            , maybeParam "q"          q
+                            , maybeList  "labelIds"   labelIds
+                            ]
     where
-        url = "https://www.googleapis.com/gmail/v1/users/me/threads"
+        url = "/gmail/v1/users/me/threads"
 
 listAll :: [LabelId] -> Maybe Query -> Google [Thread]
-listAll labelIds q = toList <$> go Nothing
+listAll labelIds q = singleActions $ toList <$> go Nothing
     where
         go pt = do
             tl <- list labelIds Nothing pt q

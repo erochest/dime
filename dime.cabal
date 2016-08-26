@@ -21,6 +21,7 @@ library
                      , Dime.Auth
                      , Dime.Config
                      , Dime.Google
+                     , Dime.Google.DSL
                      , Dime.Google.Labels
                      , Dime.Google.Messages
                      , Dime.Google.Network
@@ -48,6 +49,7 @@ library
                      , exceptions
                      , filepath
                      , foldl
+                     , free
                      , groom
                      , hashable
                      , hoauth2
