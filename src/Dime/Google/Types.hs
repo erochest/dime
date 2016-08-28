@@ -126,8 +126,6 @@ instance FromJSON JSBytes where
     parseJSON (String s) = return . JSBytes $ encodeUtf8 s
     parseJSON _          = mzero
 
-type MessagePart  = JSBytes
-
 -- *** Label
 
 data MessageListVisibility = ShowMessage | HideMessage
@@ -241,7 +239,7 @@ data Attachment
     = Attachment
     { _attachmentId   :: !(Maybe AttachmentId)
     , _attachmentSize :: !Int
-    , _attachmentData :: !JSBytes
+    , _attachmentData :: !(Maybe JSBytes)
     } deriving (Show, Eq, Data, Typeable, Generic)
 $(makeLenses ''Attachment)
 
@@ -270,12 +268,12 @@ instance FromJSON AttachmentInfo where
 
 data Payload
     = Payload
-    { _payloadPartId   :: !T.Text
+    { _payloadPartId   :: !(Maybe T.Text)
     , _payloadMimeType :: !T.Text
     , _payloadFilename :: !T.Text
-    , _payloadHeaders  :: ![Header]
+    , _payloadHeaders  :: !(Maybe [Header])
     , _payloadBody     :: !Attachment
-    , _payloadParts    :: !(Maybe [MessagePart])
+    , _payloadParts    :: !(Maybe [Payload])
     } deriving (Show, Eq, Data, Typeable, Generic)
 $(makeLenses ''Payload)
 
@@ -291,8 +289,6 @@ data PayloadInfo
     { _payloadInfoMimeType :: !T.Text
     , _payloadInfoFilename :: !T.Text
     , _payloadInfoHeaders  :: ![Header]
-    , _payloadInfoBody     :: ![AttachmentInfo]
-    , _payloadInfoParts    :: ![MessagePart]
     } deriving (Show, Eq, Data, Typeable, Generic)
 $(makeLenses ''PayloadInfo)
 
@@ -325,7 +321,6 @@ data MessageShort
     = MessageShort
     { _messageShortId           :: !MessageId
     , _messageShortThreadId     :: !ThreadId
-    , _messageShortInternalDate :: !T.Text
     } deriving (Show, Eq, Data, Typeable, Generic)
 
 instance ToJSON MessageShort where
