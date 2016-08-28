@@ -34,7 +34,7 @@ merged.json:
 	$(RUN) merge --dir archive/ --output $@
 
 gmail:
-	$(RUN) gmail --config=$(CONFIG) --user-index user-index.json --input archive/archive-20160809-184140.json
+	$(RUN) gmail --config=$(CONFIG) --user-index user-index.json --input `make last-archive` &> gmail-3.out
 
 # package:
 # build a release tarball or executable
@@ -84,7 +84,10 @@ watch-test:
 	stack test --file-watch --pedantic # --test-arguments "-m TODO"
 
 count-dms:
-	ls -1 archive/*.json | tail -1 | xargs cat | aeson-pretty | grep '"text"' | wc -l
+	cat `make last-archive` | aeson-pretty | grep '"text"' | wc -l
+
+last-archive:
+	@ls -1 archive/*.json | tail -1
 
 restart: distclean init build
 
