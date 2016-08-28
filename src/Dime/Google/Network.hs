@@ -90,6 +90,9 @@ runGoogle' configFile a = withConfig' configFile $ \config -> do
 maybeParam :: Show a => T.Text -> Maybe a -> Maybe GetParam
 maybeParam n = fmap ((n,) . pure . T.pack . show)
 
+maybeParamT :: T.Text -> Maybe T.Text -> Maybe GetParam
+maybeParamT n = fmap ((n,) . pure)
+
 maybeList :: T.Text -> [T.Text] -> Maybe GetParam
 maybeList _ [] = Nothing
 maybeList n vs = Just (n, vs)
