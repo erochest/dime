@@ -7,9 +7,13 @@ import           Control.Error
 import           Control.Monad
 import           Control.Monad.IO.Class
 import           Data.Foldable
+import           Data.Hashable
 import qualified Data.HashMap.Strict       as M
+import qualified Data.Sequence             as S
 import qualified Data.Text                 as T
+import           Data.Text.Read
 import           Data.Time
+import           Data.Tuple                (swap)
 import           Data.UUID                 (UUID)
 import           Data.UUID.V1
 import           Debug.Trace
@@ -50,9 +54,9 @@ watchM msg x = do
     traceM $ msg ++ groom x
     return x
 
-watchFM :: Monad m => String -> (a -> String) -> a -> m a
+watchFM :: (Monad m, Show b) => String -> (a -> b) -> a -> m a
 watchFM msg f x = do
-    traceM $ msg ++ f x
+    traceM $ msg ++ groom (f x)
     return x
 
 watchF :: Show b => String -> (a -> b) -> a -> a
@@ -98,3 +102,25 @@ uuid = do
          Just u  -> return u
          Nothing -> liftIO (threadDelay 100) >> uuid
 
+indexBy :: (Functor t, Foldable t, Hashable k, Eq k)
+        => (a -> k) -> t a -> M.HashMap k [a]
+indexBy f = fmap toList . foldl' insert M.empty . fmap (f &&& S.singleton)
+    where
+        insert m (k, xs) = M.insertWith mappend k xs m
+
+indexByM :: (Traversable t, Foldable t, Hashable k, Eq k, Monad m)
+         => (a -> m k) -> t a -> m (M.HashMap k [a])
+indexByM f = fmap (fmap toList . foldl' insert M.empty)
+           . mapM (fmap swap . sequenceA . (S.singleton &&& f))
+    where
+        insert m (k, xs) = M.insertWith mappend k xs m
+
+decimalE :: Integral a => T.Text -> Either String a
+decimalE t = do
+    (x, r) <- decimal t
+    if T.null r
+       then Left  "Trailing text while parsing a number."
+       else Right x
+
+decimalP :: (Integral a, MonadPlus m) => T.Text -> m a
+decimalP = either (const mzero) return . decimalE

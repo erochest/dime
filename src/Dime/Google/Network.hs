@@ -5,6 +5,7 @@
 module Dime.Google.Network where
 
 
+import           Control.Concurrent
 import           Control.Error
 import           Control.Exception          (displayException)
 import           Control.Lens               hiding ((??))
@@ -22,6 +23,7 @@ import           Network.Wreq.Types         hiding (auth, manager)
 import           Dime.Config
 import           Dime.Google.Types
 import           Dime.Types
+import           Dime.Utils
 
 
 baseURL :: URI
@@ -51,6 +53,7 @@ getJSON' uri ps = do
               & manager .~ Right m
               & auth ?~ oauth2Bearer (accessToken t)
         opts  = foldl' setp opts' ps
+    liftIO . threadDelay =<< watchM "waiting " 1500
     asJSON' =<< liftIO (getWith opts (normURL uri))
 
 postJSON :: (Postable a, FromJSON b) => URI -> a -> Google b

@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedLists     #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -7,41 +8,46 @@
 module Dime.Actions.Gmail where
 
 
+import qualified Codec.Binary.QuotedPrintable as QP
+import           Control.Applicative
 import           Control.Arrow
 import           Control.Error
-import           Control.Lens           hiding ((??), (|>))
+import           Control.Lens                 hiding ((??), (|>))
 import           Control.Monad
 import           Control.Monad.IO.Class
 import           Data.Aeson
-import qualified Data.ByteString        as B
-import qualified Data.ByteString.Base64 as B64
-import qualified Data.ByteString.Lazy   as BL
+import qualified Data.ByteString              as B
+import qualified Data.ByteString.Lazy         as BL
+import qualified Data.Csv                     as Csv
 import           Data.Foldable
-import qualified Data.HashMap.Strict    as M
-import qualified Data.HashSet           as S
-import qualified Data.List              as L
+import qualified Data.HashMap.Strict          as M
+import qualified Data.HashSet                 as S
+import qualified Data.List                    as L
 import           Data.List.Split
 import           Data.Monoid
 import           Data.Ord
-import           Data.Sequence          ((|>))
-import qualified Data.Sequence          as Seq
-import qualified Data.Text              as T
+import           Data.Sequence                ((|>))
+import qualified Data.Sequence                as Seq
+import qualified Data.Text                    as T
 import           Data.Text.Encoding
-import qualified Data.Text.IO           as TIO
-import qualified Data.Text.Lazy         as TL
+import qualified Data.Text.IO                 as TIO
+import qualified Data.Text.Lazy               as TL
 import           Data.Text.Read
 import           Data.Time
-import           Data.UUID              (toText)
+import           Data.Time.Clock.POSIX
+import           Data.UUID                    (toText)
+import qualified Data.Vector                  as V
 import           Network.Mail.Mime
-import           Text.Groom
+import           System.Environment
+import           System.IO
 import           Web.Twitter.Types.Lens
 
 import           Dime.Google
-import           Dime.Google.DSL        (batchActions, singleActions)
-import qualified Dime.Google.Labels     as Labels
-import qualified Dime.Google.Messages   as Messages
+import           Dime.Google.DSL              (batchActions, singleActions)
+import qualified Dime.Google.Labels           as Labels
+import qualified Dime.Google.Messages         as Messages
 import           Dime.Google.Network
-import qualified Dime.Google.Threads    as Threads
+import qualified Dime.Google.Threads          as Threads
 import           Dime.Google.Types
 import           Dime.Utils
 
@@ -76,6 +82,7 @@ archiveGmail configFile userFile archive label = runGoogle' configFile $ do
     print' twitterLabelId
 
     dumpSMS
+    _ <- undefined
 
     messages <-  fmap (L.sortBy (comparing _messageInternalDate))
              .   batchActions . mapM (Messages.get . _messageShortId)
@@ -112,7 +119,10 @@ importThread label ts ms ui (u1, u2) dms = do
     mapM_ (uncurry insertThread) $ twitterThreads (fst <$> tm) email
     where
         dms' = L.sortBy (comparing (view dmCreatedAt)) dms
-        ms'  = filter (any (uncurry inMessage) . (<$> [u1, u2]) . (,)) ms
+        ms'  = filter ( any (uncurry inMessage)
+                      . (<$> ([u1, u2] :: [UserId]))
+                      . (,)
+                      ) ms
         mts  = S.fromList $ _messageThreadId <$> ms'
         tm :: Maybe (Thread, Message)
         tm   = lastZ
@@ -129,7 +139,7 @@ inMessage :: Message -> UserId -> Bool
 inMessage m uid =  Header hTwitterSender uid'    `elem` headers
                 || Header hTwitterRecipient uid' `elem` headers
     where
-        headers = m ^. messagePayload . payloadHeaders
+        headers = fold $ m ^. messagePayload . payloadHeaders
         uid'    = T.pack $ show uid
 
 separateTwitterThreads :: [DirectMessage] -> [TwitterThread]
@@ -204,13 +214,100 @@ insertThread current ms = toList . snd <$> foldlM step (current, Seq.empty) ms
 dumpSMS :: Google ()
 dumpSMS = do
     labelIndex <- singleActions Labels.index
-    sms <- singleActions
-        $  Messages.list (mapMaybe (`M.lookup` labelIndex) ["SMS"]) (Just 25)
-                         Nothing Nothing
-    putStrLn' "SMS"
-    putStrLn' . groom
-        =<< batchActions
-            (mapM (Messages.get . _messageShortId) $ _messagesMessages sms)
+    let smsLabel = mapMaybe (`M.lookup` labelIndex) ["SMS"]
+    {-
+     - sms <- singleActions $ Messages.list smsLabel (Just 25) Nothing Nothing
+     - putStrLn' "SMS"
+     - putStrLn' $ groom sms
+     - putStrLn' . groom
+     -     =<< batchActions
+     -         (mapM (Messages.get . _messageShortId) $ _messagesMessages sms)
+     -}
+
+    email <- liftE . ExceptT . fmap (note "Missing QUERY_EMAIL.")
+          $  lookupEnv "QUERY_EMAIL"
+    putStrLn' ("Retrieving messages for " ++ email)
+        >> liftIO (hFlush stdout)
+    messages <- Messages.listAll' smsLabel . Just $ T.pack email
+
+    putStrLn' "Indexing"
+        >> liftIO (hFlush stdout)
+    messageCounts <-  liftE
+                  $   mapM (fmap (fmap length) . indexByM bySender)
+                  =<< indexByM byMonth messages
+
+    putStrLn' "Aggregating SMS by date-sender and writing to message-counts.csv"
+        >> liftIO (hFlush stdout)
+    let senders = fmap encodeUtf8 . L.sort . toList . S.fromList . concatMap M.keys
+                $ toList messageCounts
+    writeCSV "message-counts.csv"
+             (V.fromList ("year":"month":senders))
+             $ toRow <$> M.toList messageCounts
+    putStrLn' "Writing date, sender, and message to messages.csv"
+        >> liftIO (hFlush stdout)
+    writeCSV "messages.csv"
+             ["date", "sender", "message"]
+             $ toMessageRow <$> messages
+    where
+        writeCSV :: Csv.ToNamedRecord a
+                 => FilePath -> Csv.Header -> [a] -> Google ()
+        writeCSV fp h = liftIO . BL.writeFile fp . Csv.encodeByName h
+
+        toRow :: ((Integer, Int), M.HashMap T.Text Int) -> M.HashMap T.Text Integer
+        toRow ((y, m), r) = M.insert "year"  y
+                          . M.insert "month" (fromIntegral m)
+                          $ fromIntegral <$> r
+
+        toMessageRow :: Message -> M.HashMap T.Text T.Text
+        toMessageRow m =
+            let pl  = m ^. messagePayload
+                fmt = iso8601DateFormat (Just "%H:%M:%S")
+                d   = maybe "" (T.pack . formatTime defaultTimeLocale fmt)
+                    . hush
+                    $ messageDate m
+                s   = fold $ headerLU "From" =<< pl ^. payloadHeaders
+                msg :: Maybe T.Text
+                    =   ( pl ^? payloadBody . attachmentData . _Just
+                        . to unBytes . to decodeUtf8)
+                    <|> (   hush . fmap decodeUtf8 . QP.decode . unBytes
+                        =<< preview (payloadBody . attachmentData . _Just)
+                        =<< listToMaybe . filter isTextPart
+                        =<< pl ^. payloadParts
+                        )
+            in  M.fromList [ ("date"   , d)
+                           , ("sender" , s)
+                           , ("message", fold msg)
+                           ]
+
+        isTextPart :: Payload -> Bool
+        isTextPart = any isTextHeader . fold . _payloadHeaders
+
+        isTextHeader :: Header -> Bool
+        isTextHeader Header{..} =  _headerName  == "Content-Type"
+                                && _headerValue == "text/plain; charset=utf-8"
+
+        messageDate :: Message -> Either String UTCTime
+        messageDate = fmap (posixSecondsToUTCTime . realToFrac)
+                    . (decimalE :: T.Text -> Either String Integer)
+                    . _messageInternalDate
+
+        byMonth :: Message -> Script (Integer, Int)
+        byMonth = hoistEither
+                . fmap ((\(y, m, _) -> (y, m)) . toGregorian . utctDay)
+                . messageDate
+
+        bySender :: Message -> Script T.Text
+        bySender =   hoistEither
+                 .   note "Missing 'From' header"
+                 .   (headerLU "From" <=< _payloadHeaders)
+                 .   _messagePayload
+
+        headerLU :: T.Text -> [Header] -> Maybe T.Text
+        headerLU k (Header{..}:hs)
+            | _headerName == k = Just _headerValue
+            | otherwise        = headerLU k hs
+        headerLU _ [] = Nothing
+        headerLU _ _  = Nothing
 
 readJSON :: FromJSON a => FilePath -> Google a
 readJSON =   liftE . hoistEither . eitherDecodeStrict'
@@ -221,6 +318,7 @@ messageTweetId m = listToMaybe
                  . rights
                  . map (fmap fst . decimal . _headerValue)
                  . filter ((== hTwitterId) . _headerName)
+                 . fold
                  $ m ^. messagePayload . payloadHeaders
 
 luEmail :: T.Text -> M.HashMap T.Text Address -> T.Text
@@ -275,8 +373,4 @@ fromHeaders = fmap (uncurry Header . first decodeUtf8)
 
 partToPayload :: [Header] -> Part -> PayloadInfo
 partToPayload headers Part{..} =
-    PayloadInfo partType (fold partFilename) headers' [attachment] []
-    where
-        headers'   = headers ++ fromHeaders partHeaders
-        content    = B64.encode $ BL.toStrict partContent
-        attachment = AttachmentInfo (Just $ B.length content) $ JSBytes content
+    PayloadInfo partType (fold partFilename) $ headers ++ fromHeaders partHeaders
