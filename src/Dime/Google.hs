@@ -20,5 +20,5 @@ getUser =   liftE
         .   preview (key "emailAddress". _String)
         =<< (getJSON url :: Google Value)
     where
-        url = "https://www.googleapis.com/gmail/v1/users/me/profile"
+        url = "/gmail/v1/users/me/profile"
 

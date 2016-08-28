@@ -24,10 +24,10 @@ list = _labelsLabels <$> DSL.get url []
 get :: LabelId -> GoogleAction Label
 get lId = DSL.get url []
     where
-        url = "/gmail/v1/users/me/labels" <> encodeUtf8 lId
+        url = "/gmail/v1/users/me/labels/" <> encodeUtf8 lId
 
 create :: LabelInfo -> GoogleAction Label
-create = post' "/gmail/v1/users/me/labels" . toJSON
+create = post' "/gmail/v1/users/me/labels/" . toJSON
 
 {-
  - create :: LabelInfo -> Google Label
