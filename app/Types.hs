@@ -27,4 +27,8 @@ data Actions
             , gmailArchiveFile :: !FilePath
             , gmailLabel       :: !T.Text
             }
+    | TCount { tCountArchive  :: !FilePath
+             , tCountOutput   :: !FilePath
+             , tCountUserName :: !(Maybe T.Text)
+             }
     deriving (Show, Eq)

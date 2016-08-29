@@ -9,8 +9,9 @@ module Actions where
 import           Control.Error
 
 import           Dime.Actions.Archive
-import           Dime.Actions.Gmail
+import           Dime.Actions.Counts
 import           Dime.Actions.DMs
+import           Dime.Actions.Gmail
 import           Dime.Actions.Login
 import           Dime.Actions.Merge
 
@@ -26,3 +27,4 @@ action Merge{..}   = mergeFiles mergeBaseDir mergeOutput
 action Archive{..} = archiveDMs archiveConfig archiveUserName archiveDir
 action Gmail{..}   = archiveGmail gmailConfig gmailUserIndex gmailArchiveFile
                                   gmailLabel
+action TCount{..}  = twitterCounts tCountArchive tCountOutput tCountUserName

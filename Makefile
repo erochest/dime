@@ -36,6 +36,10 @@ merged.json:
 gmail:
 	$(RUN) gmail --config=$(CONFIG) --user-index user-index.json --input `make last-archive` &> gmail-3.out
 
+aggregate-dms:
+	$(RUN) twitter-counts --archive `make last-archive` \
+		--output tmp/aggregate-dms.csv --user $(QUERY_USER)
+
 # package:
 # build a release tarball or executable
 #

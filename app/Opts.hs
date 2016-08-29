@@ -83,6 +83,14 @@ gmailOpts =   Gmail
                         <> help "The name of the label to file the Tweets in.\
                                 \ Defaults to 'TWITTER'.")
 
+tCountOpts :: Parser Actions
+tCountOpts =   TCount
+           <$> strOption (  short 'a' <> long "archive" <> metavar "FILENAME"
+                         <> help "The file name to read Twitter DMs from for\
+                                 \ counts.")
+           <*> outputOpt
+           <*> optional userOpt
+
 opts' :: Parser Actions
 opts' = subparser
     (  command "twitter-login" (info (helper <*> tLoginOpts)
@@ -104,6 +112,9 @@ opts' = subparser
     <> command "gmail" (info (helper <*> gmailOpts)
                         (progDesc "Read DMs from an archive file and insert\
                                   \ into Gmail."))
+    <> command "twitter-counts" (info (helper <*> tCountOpts)
+                                    (progDesc "Count messages sent by month and\
+                                              \ sender."))
     )
 
 opts :: ParserInfo Actions
