@@ -240,9 +240,9 @@ dumpSMS = do
         >> liftIO (hFlush stdout)
     let senders = fmap encodeUtf8 . L.sort . toList . S.fromList . concatMap M.keys
                 $ toList messageCounts
-    writeCSV "message-counts.csv"
-             (V.fromList ("year":"month":senders))
-             $ toRow <$> M.toList messageCounts
+        headers = V.fromList ("year":"month":senders)
+    writeCSV "message-counts.csv" headers
+             $ toRow headers <$> M.toList messageCounts
     putStrLn' "Writing date, sender, and message to messages.csv"
         >> liftIO (hFlush stdout)
     writeCSV "messages.csv"
@@ -253,10 +253,12 @@ dumpSMS = do
                  => FilePath -> Csv.Header -> [a] -> Google ()
         writeCSV fp h = liftIO . BL.writeFile fp . Csv.encodeByName h
 
-        toRow :: ((Integer, Int), M.HashMap T.Text Int) -> M.HashMap T.Text Integer
-        toRow ((y, m), r) = M.insert "year"  y
-                          . M.insert "month" (fromIntegral m)
-                          $ fromIntegral <$> r
+        toRow :: Csv.Header -> ((Integer, Int), M.HashMap T.Text Int)
+              -> M.HashMap T.Text Integer
+        toRow h ((y, m), r) = flip (foldl' insertDefault) h
+                            . M.insert "year"  y
+                            . M.insert "month" (fromIntegral m)
+                            $ fromIntegral <$> r
 
         toMessageRow :: Message -> M.HashMap T.Text T.Text
         toMessageRow m =
@@ -278,6 +280,14 @@ dumpSMS = do
                            , ("sender" , s)
                            , ("message", fold msg)
                            ]
+
+        insertDefault :: M.HashMap T.Text Integer -> Csv.Name
+                      -> M.HashMap T.Text Integer
+        insertDefault m k = M.alter alter (decodeUtf8 k) m
+
+        alter :: Maybe Integer -> Maybe Integer
+        alter v@(Just _) = v
+        alter Nothing    = Just 0
 
         isTextPart :: Payload -> Bool
         isTextPart = any isTextHeader . fold . _payloadHeaders
