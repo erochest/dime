@@ -26,6 +26,9 @@ import           Dime.Types
 import           Dime.Utils
 
 
+requestWait :: Int
+requestWait = 2000
+
 baseURL :: URI
 baseURL = "https://www.googleapis.com"
 
@@ -53,7 +56,7 @@ getJSON' uri ps = do
               & manager .~ Right m
               & auth ?~ oauth2Bearer (accessToken t)
         opts  = foldl' setp opts' ps
-    liftIO . threadDelay =<< watchM "waiting " 1500
+    liftIO . threadDelay =<< watchM "waiting " requestWait
     asJSON' =<< liftIO (getWith opts (normURL uri))
 
 postJSON :: (Postable a, FromJSON b) => URI -> a -> Google b
