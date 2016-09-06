@@ -29,6 +29,7 @@ import           Data.Time
 import           Database.Persist.TH
 import           GHC.Generics
 
+import           Dime.Google.Types
 import           Dime.Types.Fields
 
 
@@ -130,23 +131,32 @@ isCursorDone _          = False
 
 share [mkPersist (sqlSettings { mpsGenerateLenses = True }), mkMigrate "migrateAll"]
     [persistLowerCase|
+ArchiveSession json
+    source PostSource
+    created UTCTime default=CURRENT_TIME
+    deriving Show Eq
+
 Post json
     source PostSource
     sourceId T.Text
     sender T.Text
     message T.Text
+    metadata (JSONField [GetParam])
     raw (JSONField PostObject)
     sent UTCTime
     created UTCTime default=CURRENT_TIME
+    sessionId ArchiveSessionId
     UniquePostSourceId sourceId
     deriving Show Eq
 
 DownloadCache json
     url String
-    params T.Text
+    params (JSONField [GetParam])
     source PostSource
     postId PostId Maybe
     created UTCTime default=CURRENT_TIME
+    started UTCTime Maybe
+    done UTCTime Maybe
     UniqueDownloadUrl url params
     deriving Show Eq
 |]

@@ -18,5 +18,6 @@ nextURL :: Google (Entity DownloadCache)
 nextURL = undefined
 
 downloadURL :: ToJSON a
-            => Entity DownloadCache -> a -> Google (Entity DownloadCache)
+            => Entity ArchiveSession -> Entity DownloadCache -> a
+            -> Google (Entity DownloadCache)
 downloadURL = undefined
