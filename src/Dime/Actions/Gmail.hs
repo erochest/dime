@@ -74,26 +74,29 @@ hTwitterBackupTime' = encodeUtf8 hTwitterBackupTime
 hTwitterSender'     = encodeUtf8 hTwitterSender
 hTwitterRecipient'  = encodeUtf8 hTwitterRecipient
 
-archiveGmail :: FilePath -> FilePath -> FilePath -> LabelName -> Script ()
-archiveGmail configFile userFile archive label = runGoogle' configFile $ do
-    liftIO . TIO.putStrLn . mappend "You are: " =<< getUser
+archiveGmail :: FilePath -> FilePath -> FilePath -> LabelName -> FilePath
+             -> Script ()
+archiveGmail configFile userFile archive label workingDB =
+    runGoogle' configFile workingDB $ do
+        liftIO . TIO.putStrLn . mappend "You are: " =<< getUser
 
-    twitterLabelId <- singleActions $ _labelId <$> Labels.ensure label
-    print' twitterLabelId
+        twitterLabelId <- singleActions $ _labelId <$> Labels.ensure label
+        print' twitterLabelId
 
-    dumpSMS
-    _ <- undefined
+        dumpSMS
+        _ <- undefined
 
-    messages <-  fmap (L.sortBy (comparing _messageInternalDate))
-             .   batchActions . mapM (Messages.get . _messageShortId)
-             =<< Messages.listAll [twitterLabelId] Nothing
-    threads  <-  M.fromList . map (_threadId &&& id)
-             <$> Threads.listAll [twitterLabelId] Nothing
-    tweets   <-  separateTwitterThreads <$> readJSON archive
-    users    <-  fmap contactAddress <$> readJSON userFile
+        messages <-  fmap (L.sortBy (comparing _messageInternalDate))
+                 .   batchActions . mapM (Messages.get . _messageShortId)
+                 =<< Messages.listAll [twitterLabelId] Nothing
+        threads  <-  M.fromList . map (_threadId &&& id)
+                 <$> Threads.listAll [twitterLabelId] Nothing
+        tweets   <-  separateTwitterThreads <$> readJSON archive
+        users    <-  fmap contactAddress <$> readJSON userFile
 
-    mapM_ (uncurry (importThread twitterLabelId threads messages users) <=< status)
-          tweets
+        mapM_ (   uncurry (importThread twitterLabelId threads messages users)
+              <=< status)
+              tweets
     where
         status p@((u1, u2), dms)
             =  putStrLn' (  "Importing conversation between "

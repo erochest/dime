@@ -26,5 +26,5 @@ action DMs{..}     = scrapeDMs dmsConfig dmsUserName dmsOutput
 action Merge{..}   = mergeFiles mergeBaseDir mergeOutput
 action Archive{..} = archiveDMs archiveConfig archiveUserName archiveDir
 action Gmail{..}   = archiveGmail gmailConfig gmailUserIndex gmailArchiveFile
-                                  gmailLabel
+                                  gmailLabel gmailQueueDB
 action TCount{..}  = twitterCounts tCountArchive tCountOutput tCountUserName

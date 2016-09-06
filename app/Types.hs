@@ -26,6 +26,7 @@ data Actions
             , gmailUserIndex   :: !FilePath
             , gmailArchiveFile :: !FilePath
             , gmailLabel       :: !T.Text
+            , gmailQueueDB     :: !FilePath
             }
     | TCount { tCountArchive  :: !FilePath
              , tCountOutput   :: !FilePath

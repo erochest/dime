@@ -34,7 +34,10 @@ merged.json:
 	$(RUN) merge --dir archive/ --output $@
 
 gmail:
-	$(RUN) gmail --config=$(CONFIG) --user-index user-index.json --input `make last-archive` &> tmp/gmail.out
+	$(RUN) gmail --config=$(CONFIG) --user-index user-index.json \
+		--input `make last-archive` \
+		--working-db .gmail.sqlite \
+		&> tmp/gmail.out
 
 aggregate-dms:
 	$(RUN) twitter-counts --archive `make last-archive` \

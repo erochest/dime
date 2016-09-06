@@ -82,6 +82,10 @@ gmailOpts =   Gmail
                         <> value "TWITTER"
                         <> help "The name of the label to file the Tweets in.\
                                 \ Defaults to 'TWITTER'.")
+          <*> strOption (  short 'w' <> long "working-db" <> metavar "SQLITE_DB"
+                        <> value ":memory:"
+                        <> help "The name of a file to keep the working queue\
+                                \ of URLs to download in. Defaults to ':memory:'.")
 
 tCountOpts :: Parser Actions
 tCountOpts =   TCount

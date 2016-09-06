@@ -2,24 +2,32 @@
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE UndecidableInstances       #-}
 
 
 module Dime.Google.Types where
 
 
+import           Control.Arrow                         ((&&&))
 import           Control.Error                         (ExceptT (..), Script,
                                                         throwE)
 import           Control.Lens
 import           Control.Monad
+import           Control.Monad.Base
 import           Control.Monad.Catch
-import           Control.Monad.IO.Class
-import           Control.Monad.Reader
 import           Control.Monad.Free
+import           Control.Monad.IO.Class
+import           Control.Monad.Logger
+import           Control.Monad.Reader
+import           Control.Monad.Trans.Control
 import           Data.Aeson
 import           Data.Aeson.Types
 import           Data.Bifunctor                        (first)
@@ -30,6 +38,7 @@ import           Data.Data
 import           Data.Monoid                           ((<>))
 import qualified Data.Text                             as T
 import           Data.Text.Encoding
+import           Database.Persist.Sql
 import           GHC.Generics
 import           Network.HTTP.Client.Internal          hiding ((<>))
 import           Network.HTTP.Client.MultipartFormData
@@ -41,26 +50,66 @@ import           Network.Wreq.Types                    hiding (Options, Payload)
 
 -- * Google monad
 
-newtype Google a
-    = Google { unGoogle :: ReaderT (Manager, AccessToken) Script a }
-    deriving ( Functor, Applicative, Monad, MonadReader (Manager, AccessToken)
-             , MonadIO, Generic
+data GoogleData
+    = GoogleData
+    { _gdManager     :: !Manager
+    , _gdAccessToken :: !AccessToken
+    , _gdSqlBackend  :: !SqlBackend
+    } deriving (Typeable, Generic)
+$(makeLenses ''GoogleData)
+
+newtype GoogleT m a
+    = GoogleT { unGoogleT :: ReaderT GoogleData (LoggingT (ExceptT String m)) a }
+    deriving ( Functor, Applicative, Monad, MonadReader GoogleData
+             , MonadIO, MonadLogger, Generic
              )
 
-instance MonadThrow Google where
-    throwM = Google . lift . throwE . show
+type Google = GoogleT IO
 
-runGoogle :: Manager -> AccessToken -> Google a -> Script a
-runGoogle m t g = runReaderT (unGoogle g) (m, t)
+instance MonadTrans GoogleT where
+    lift = GoogleT . lift . lift . lift
 
-currentManager :: Google Manager
-currentManager = asks fst
+instance MonadThrow m => MonadThrow (GoogleT m) where
+    throwM = GoogleT . lift . lift . throwE . show
 
-currentAccessToken :: Google AccessToken
-currentAccessToken = asks snd
+instance MonadTransControl GoogleT where
+    type StT GoogleT a = StT LoggingT a
+    liftWith runG = GoogleT $ liftWith $ \runR ->
+                              liftWith $ \runL ->
+                              liftWith $ \runE ->
+                                runG $ (either fail return =<<)
+                                     . runE . runL . runR . unGoogleT
+    restoreT = GoogleT . restoreT . restoreT . restoreT . fmap Right
+
+instance MonadBase b m => MonadBase b (GoogleT m) where
+    liftBase = liftBaseDefault
+
+instance MonadBaseControl b m => MonadBaseControl b (GoogleT m) where
+    type StM (GoogleT m) a = ComposeSt GoogleT m a
+    liftBaseWith = defaultLiftBaseWith
+    restoreM     = defaultRestoreM
+
+runGoogle :: Manager -> AccessToken -> SqlBackend -> Google a -> Script a
+runGoogle m t s = runStderrLoggingT . runGoogleL m t s
+
+runGoogleL :: Manager -> AccessToken -> SqlBackend -> Google a
+           -> LoggingT (ExceptT String IO) a
+runGoogleL m t s g = runReaderT (unGoogleT g) (GoogleData m t s)
+
+currentManager :: Monad m => GoogleT m Manager
+currentManager = view gdManager
+
+currentAccessToken :: Monad m => GoogleT m AccessToken
+currentAccessToken = view gdAccessToken
+
+currentSqlBackend :: Monad m => GoogleT m SqlBackend
+currentSqlBackend = view gdSqlBackend
+
+currentManagerToken :: Monad m => GoogleT m (Manager, AccessToken)
+currentManagerToken = asks (_gdManager &&& _gdAccessToken)
 
 liftE :: Script a -> Google a
-liftE = Google . lift
+liftE = GoogleT . lift . lift
 
 liftG :: IO (OAuth2Result a) -> Google a
 liftG = liftE . liftSG
@@ -319,8 +368,8 @@ instance FromJSON RawMessage where
 
 data MessageShort
     = MessageShort
-    { _messageShortId           :: !MessageId
-    , _messageShortThreadId     :: !ThreadId
+    { _messageShortId       :: !MessageId
+    , _messageShortThreadId :: !ThreadId
     } deriving (Show, Eq, Data, Typeable, Generic)
 
 instance ToJSON MessageShort where

@@ -9,12 +9,14 @@ import           Control.Concurrent
 import           Control.Error
 import           Control.Exception          (displayException)
 import           Control.Lens               hiding ((??))
+import           Control.Monad.Logger
 import           Control.Monad.Reader
 import           Data.Aeson
 import qualified Data.ByteString.Char8      as B8
 import qualified Data.ByteString.Lazy.Char8 as BL8
 import           Data.Foldable
 import qualified Data.Text                  as T
+import           Database.Persist.Sqlite
 import           Network.HTTP.Conduit       hiding (Proxy, responseBody)
 import           Network.OAuth.OAuth2
 import           Network.Wreq
@@ -42,16 +44,11 @@ asJSON' = liftE
         . asJSON
 
 getJSON :: FromJSON a => URI -> Google a
-getJSON uri = do
-    (m, t) <- ask
-    let opts = defaults
-             & manager .~ Right m
-             & auth ?~ oauth2Bearer (accessToken t)
-    asJSON' =<< liftIO (getWith opts (normURL uri))
+getJSON uri = getJSON' uri []
 
 getJSON' :: FromJSON a => URI -> [GetParam] -> Google a
 getJSON' uri ps = do
-    (m, t) <- ask
+    (m, t) <- currentManagerToken
     let opts' = defaults
               & manager .~ Right m
               & auth ?~ oauth2Bearer (accessToken t)
@@ -61,7 +58,7 @@ getJSON' uri ps = do
 
 postJSON :: (Postable a, FromJSON b) => URI -> a -> Google b
 postJSON uri d = do
-    (m, t) <- ask
+    (m, t) <- currentManagerToken
     let opts = defaults
              & manager .~ Right m
              & auth ?~ oauth2Bearer (accessToken t)
@@ -70,7 +67,7 @@ postJSON uri d = do
 postJSON' :: (Postable a, FromJSON b)
           => URI -> [GetParam] -> a -> Google b
 postJSON' uri ps d = do
-    (m, t) <- ask
+    (m, t) <- currentManagerToken
     let opts' = defaults
               & manager .~ Right m
               & auth ?~ oauth2Bearer (accessToken t)
@@ -85,13 +82,19 @@ googleOAuth = OAuth2 "994279088207-aicibrrd9vonnfbbk1gcpskvb5qfnn7h\
                      "https://accounts.google.com/o/oauth2/token"
                      (Just "urn:ietf:wg:oauth:2.0:oob")
 
-runGoogle' :: FilePath -> Google a -> Script a
-runGoogle' configFile a = withConfig' configFile $ \config -> do
-    refresh <- (config ^? loginGmail . _Just)
-            ?? "You must call 'dime google-login'."
-    m       <- scriptIO $ newManager tlsManagerSettings
-    token'  <- liftSG $  fetchRefreshToken m googleOAuth refresh
-    runGoogle m token' a
+runGoogle' :: FilePath -> FilePath -> Google a -> Script a
+runGoogle' configFile workingDb a =
+    withConfig' configFile $ \config -> runStderrLoggingT $ do
+        refresh <- lift $  (config ^? loginGmail . _Just)
+                        ?? "You must call 'dime google-login'."
+        m       <- lift . scriptIO $ newManager tlsManagerSettings
+        token'  <- lift . liftSG   $ fetchRefreshToken m googleOAuth refresh
+
+        let workingDb' = T.pack workingDb
+        runSqlite workingDb' $
+            runMigration migrateAll
+        withSqliteConn workingDb' $ \s ->
+            runGoogleL m token' s a
 
 maybeParam :: Show a => T.Text -> Maybe a -> Maybe GetParam
 maybeParam n = fmap ((n,) . pure . T.pack . show)

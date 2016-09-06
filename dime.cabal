@@ -6,10 +6,10 @@ license:             Apache-2.0
 license-file:        LICENSE
 author:              Eric Rochester
 maintainer:          erochest@gmail.com
--- copyright:           
+-- copyright:
 category:            Web
 build-type:          Simple
--- extra-source-files:  
+-- extra-source-files:
 cabal-version:       >=1.10
 
 library
@@ -31,11 +31,11 @@ library
                      , Dime.Resume
                      , Dime.Twitter
                      , Dime.Types
+                     , Dime.Types.Fields
                      , Dime.Utils
-  -- other-modules:       
-  -- other-extensions:    
+  -- other-modules:
+  -- other-extensions:
   build-depends:       base >=4.8 && <4.9
-                     , acid-state
                      , aeson
                      , authenticate-oauth
                      , blaze-builder
@@ -62,18 +62,22 @@ library
                      , lens-aeson
                      , mime-mail
                      , monad-control
+                     , monad-logger
                      , monad-loops
                      , mtl
                      , open-browser
+                     , persistent
+                     , persistent-sqlite
+                     , persistent-template
                      , process
                      , resourcet
-                     , safecopy
                      , sandi
                      , split
                      , text
                      , text-format
                      , time
                      , transformers
+                     , transformers-base
                      , twitter-conduit
                      , twitter-types
                      , twitter-types-lens
@@ -89,7 +93,7 @@ executable dime
   other-modules:       Actions
                      , Opts
                      , Types
-  -- other-extensions:    
+  -- other-extensions:
   build-depends:       base >=4.8 && <5
                      , dime
                      , bytestring
@@ -127,7 +131,7 @@ benchmark dime-bench
                        -rtsopts
   hs-source-dirs:      bench
   main-is:             Bench.hs
-  -- other-modules:         
+  -- other-modules:
   build-depends:         base
                        , dime
                        , criterion
