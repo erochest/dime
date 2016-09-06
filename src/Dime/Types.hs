@@ -128,9 +128,6 @@ isCursorDone :: IdCursor -> Bool
 isCursorDone CursorDone = True
 isCursorDone _          = False
 
--- TODO: Dime.Resume functions
--- TODO: Dime.Google.Network.getJSON' rewrite
--- TODO: refactor workflows, cli
 share [mkPersist (sqlSettings { mpsGenerateLenses = True }), mkMigrate "migrateAll"]
     [persistLowerCase|
 Post json
