@@ -48,7 +48,8 @@ import qualified Dime.Google.Labels           as Labels
 import qualified Dime.Google.Messages         as Messages
 import           Dime.Google.Network
 import qualified Dime.Google.Threads          as Threads
-import           Dime.Google.Types
+import           Dime.Types
+import           Dime.Types.Google
 import           Dime.Utils
 
 

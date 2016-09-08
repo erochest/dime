@@ -18,7 +18,7 @@ import qualified Data.Text                  as T
 import           Network.OAuth.OAuth2
 import           Network.Wreq
 
-import           Dime.Google.Types
+import           Dime.Types
 import           Dime.Utils
 
 

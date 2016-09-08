@@ -6,6 +6,7 @@ module Dime.Resume where
 
 import           Control.Error
 import           Control.Lens
+import           Control.Monad
 import           Control.Monad.Trans
 import           Data.Aeson
 import qualified Data.ByteString.Char8     as B8
@@ -15,7 +16,6 @@ import           Database.Persist
 import           Network.OAuth.OAuth2
 
 import           Dime.Google.Network.Utils
-import           Dime.Google.Types
 import           Dime.Types
 import           Dime.Types.Fields
 
@@ -37,25 +37,26 @@ nextURL = runMaybeT $ do
     Entity k <$> lift (liftSql $ updateGet k [DownloadCacheStarted =. Just now])
 
 getCacheURL :: (FromJSON a, ToPostObject a)
-            => ArchiveSessionId -> Entity DownloadCache
-            -> Google (Entity DownloadCache, Entity Post, a)
-getCacheURL sId ed@(Entity dcId d) =
-    maybe download return =<< runMaybeT (do
-        pId <- hoistMaybe $ d ^. downloadCachePostId
-        p'  <- MaybeT . liftSql $ get pId
-        po  <- hoistMaybe . fromPostObject . unJSON $ p' ^. postRaw
-        return (ed, Entity pId p', po)
+            => ArchiveSessionId -> Entity DownloadCache -> Google a
+getCacheURL sId (Entity dcId d) =
+    maybe download return =<< runMaybeT (
+        hoistMaybe . fromPostObject . unJSON . view postRaw
+            =<< MaybeT . liftSql . get
+            =<< hoistMaybe (d ^. downloadCachePostId)
         )
     where
         download = do
             now <- liftIO getCurrentTime
-            a   <- getUncachedJSON (d ^. downloadCacheUrl . to B8.pack)
+            a   <- getUncachedJSON (d ^. downloadCacheUrl    . to B8.pack)
                                    (d ^. downloadCacheParams . to unJSON)
-            p   <- liftSql
-                .  insertEntity
-                $  Post (getSource a) (getSourceId a) (fold $ getSender a)
-                        (fold $ getMessage a) (JSONField $ getMetadata a)
-                        (JSONField $ toPostObject a) (getSent a) now sId
-            d'  <- liftSql
-                $  updateGet dcId [DownloadCachePostId =. Just (entityKey p)]
-            return (Entity dcId d', p, a)
+            case toPostObject a of
+                Just po -> do
+                    p   <- liftSql
+                        .  insertEntity
+                        $  Post (getSource a) (getSourceId a) (fold $ getSender a)
+                                (fold $ getMessage a) (JSONField $ getMetadata a)
+                                (JSONField po) (getSent a) now sId
+                    void $ liftSql
+                         $ updateGet dcId [DownloadCachePostId =. Just (entityKey p)]
+                    return a
+                Nothing -> return a

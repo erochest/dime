@@ -13,7 +13,8 @@ import           Data.Text.Encoding
 
 import           Dime.Google.DSL     hiding (get)
 import qualified Dime.Google.DSL     as DSL
-import           Dime.Google.Types
+import           Dime.Types
+import           Dime.Types.Google
 
 
 list :: GoogleAction [Label]

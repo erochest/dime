@@ -13,7 +13,8 @@ import           Data.Text.Encoding
 import           Dime.Google.DSL
 import qualified Dime.Google.DSL           as DSL
 import           Dime.Google.Network.Utils
-import           Dime.Google.Types
+import           Dime.Types.Google
+import           Dime.Types
 
 
 get :: ThreadId -> GoogleAction Thread

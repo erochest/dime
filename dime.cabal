@@ -28,11 +28,11 @@ library
                      , Dime.Google.Network
                      , Dime.Google.Network.Utils
                      , Dime.Google.Threads
-                     , Dime.Google.Types
                      , Dime.Resume
                      , Dime.Twitter
                      , Dime.Types
                      , Dime.Types.Fields
+                     , Dime.Types.Google
                      , Dime.Utils
   -- other-modules:
   -- other-extensions:

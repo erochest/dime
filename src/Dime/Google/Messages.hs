@@ -20,7 +20,8 @@ import           Network.Wreq              hiding (get, post)
 import           Dime.Google.DSL           hiding (get)
 import qualified Dime.Google.DSL           as DSL
 import           Dime.Google.Network.Utils
-import           Dime.Google.Types
+import           Dime.Types
+import           Dime.Types.Google
 
 
 get :: MessageId -> GoogleAction Message

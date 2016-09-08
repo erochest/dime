@@ -1,37 +1,49 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TupleSections     #-}
+{-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections       #-}
 
 
 module Dime.Google.Network where
 
 
 import           Control.Error
-import           Control.Lens               hiding ((??))
+import           Control.Lens              hiding ((??))
 import           Control.Monad.Logger
 import           Control.Monad.Reader
 import           Data.Aeson
 import           Data.Foldable
-import qualified Data.Text                  as T
-import           Database.Persist.Sqlite
-import           Network.HTTP.Conduit       hiding (Proxy, responseBody)
+import qualified Data.Text                 as T
+import           Data.Time
+import           Database.Persist.Sqlite   hiding (get)
+import           Network.HTTP.Conduit      hiding (Proxy, responseBody)
 import           Network.OAuth.OAuth2
 import           Network.Wreq
-import           Network.Wreq.Types         hiding (auth, manager)
+import           Network.Wreq.Types        hiding (auth, manager)
 
 import           Dime.Config
 import           Dime.Google.Network.Utils
-import           Dime.Google.Types
+import           Dime.Resume
 import           Dime.Types
+import           Dime.Types.Fields
 
 
-getJSON :: FromJSON a => URI -> Google a
+getJSON :: (ToPostObject a, FromJSON a) => URI -> Google a
 getJSON uri = getJSON' uri []
 
--- TODO: Get or create an ArchiveSession (from a StateT)
--- TODO: queueURL
--- TODO: getCacheURL
-getJSON' :: FromJSON a => URI -> [GetParam] -> Google a
-getJSON' = getUncachedJSON
+getJSON' :: (ToPostObject a, FromJSON a) => URI -> [GetParam] -> Google a
+getJSON' uri ps = do
+    src <- use gsSource
+    dl  <- queueURL src uri ps
+    s   <- maybe (newArchiveSession src) return =<< use gsSession
+    getCacheURL (entityKey s) dl
+    where
+        newArchiveSession :: PostSource -> Google (Entity ArchiveSession)
+        newArchiveSession src = do
+            now <- liftIO getCurrentTime
+            s   <- liftSql . insertEntity $ ArchiveSession src now
+            assign gsSession $ Just s
+            return s
 
 postJSON :: (Postable a, FromJSON b) => URI -> a -> Google b
 postJSON uri d = do
@@ -71,4 +83,4 @@ runGoogle' configFile workingDb a =
         runSqlite workingDb' $
             runMigration migrateAll
         withSqliteConn workingDb' $ \s ->
-            runGoogleL m token' s a
+            runGoogleL Gmail m token' s a

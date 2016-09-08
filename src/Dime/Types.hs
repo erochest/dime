@@ -9,29 +9,141 @@
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE QuasiQuotes                #-}
+{-# LANGUAGE RecordWildCards            #-}
 {-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TupleSections              #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE UndecidableInstances       #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 
 module Dime.Types where
 
 
-import           Control.Lens        hiding (at, (.=))
+import qualified Codec.Binary.QuotedPrintable as QP
+import           Control.Applicative
+import           Control.Arrow                ((&&&))
+import           Control.Error
+import           Control.Lens                 hiding (at, (.=))
 import           Control.Monad
+import           Control.Monad.Base
+import           Control.Monad.Catch
+import           Control.Monad.Except
+import           Control.Monad.Free
+import           Control.Monad.Logger
+import           Control.Monad.Reader
+import           Control.Monad.RWS.Strict
+import           Control.Monad.Trans.Control
 import           Data.Aeson
-import           Data.Aeson.Types    (Parser)
-import           Data.ByteString     (ByteString)
+import           Data.Aeson.Types
+import           Data.Bifunctor               (first)
+import           Data.ByteString              (ByteString)
+import qualified Data.ByteString.Lazy.Char8   as L8
 import           Data.Data
-import qualified Data.Text           as T
+import           Data.Foldable                (fold)
+import qualified Data.Text                    as T
 import           Data.Text.Encoding
 import           Data.Time
+import           Data.Time.Clock.POSIX        (posixSecondsToUTCTime)
+import           Database.Persist.Sql
 import           Database.Persist.TH
-import           GHC.Generics
+import           GHC.Generics                 hiding (to)
+import           Network.HTTP.Client.Internal hiding ((<>))
+import           Network.OAuth.OAuth2
+import           Network.Wreq.Types           hiding (Options, Payload)
+import           Web.Twitter.Types.Lens       hiding (Entity, User)
 
-import           Dime.Google.Types
 import           Dime.Types.Fields
+import           Dime.Types.Google
+import           Dime.Utils
 
+
+type GetParam = (T.Text, [T.Text])
+
+-- * Types.Source
+
+class ToPostObject o where
+    toPostObject   :: o -> Maybe PostObject
+    fromPostObject :: PostObject -> Maybe o
+    getSource      :: o -> PostSource
+    getSourceId    :: o -> T.Text
+    getSender      :: o -> Maybe T.Text
+    getMessage     :: o -> Maybe T.Text
+    getMetadata    :: o -> [GetParam]
+    getSent        :: o -> Maybe UTCTime
+
+    toPostObject   = const Nothing
+    fromPostObject = const Nothing
+    getSource      = const Gmail
+    getSender      = const Nothing
+    getMessage     = const Nothing
+    getMetadata    = const []
+    getSent        = const Nothing
+
+-- * Types.Fields
+
+instance ToPostObject Label where
+    getSourceId = _labelId
+
+instance ToPostObject Labels where
+    getSourceId = const T.empty
+
+instance ToPostObject MessageList where
+    getSourceId = const T.empty
+
+instance ToPostObject Thread where
+    getSourceId = _threadId
+
+instance ToPostObject ThreadList where
+    getSourceId = const T.empty
+
+instance ToPostObject Message where
+    toPostObject = Just . PostGmail
+    fromPostObject (PostGmail   m) = Just m
+    fromPostObject (PostTwitter _) = Nothing
+
+    getSource    = const Gmail
+    getSourceId  = view messageId
+    getSender    = fmap mconcat . lookup "From" . getMetadata
+    getMessage m =   ( pl ^? payloadBody . attachmentData . _Just
+                     . to unBytes . to decodeUtf8)
+                 <|> (   hush . fmap decodeUtf8 . QP.decode . unBytes
+                     =<< preview (payloadBody . attachmentData . _Just)
+                     =<< listToMaybe . filter isTextPart
+                     =<< pl ^. payloadParts
+                     )
+                 where
+                     pl = m ^. messagePayload
+                     isTextPart :: Payload -> Bool
+                     isTextPart = any isTextHeader . fold . _payloadHeaders
+                     isTextHeader :: Header -> Bool
+                     isTextHeader Header{..} =  _headerName  == "Content-Type"
+                                             && _headerValue == "text/plain; charset=utf-8"
+    getMetadata  = fmap headerToParam
+                 . fold
+                 . view (messagePayload . payloadHeaders)
+    getSent      = hush
+                 . fmap (posixSecondsToUTCTime . realToFrac)
+                 . (decimalE :: T.Text -> Either String Integer)
+                 . view messageInternalDate
+
+instance ToPostObject DirectMessage where
+    toPostObject   = Just . PostTwitter
+    fromPostObject (PostGmail   _) = Nothing
+    fromPostObject (PostTwitter m) = Just m
+
+    getSource      = const Twitter
+    getSourceId    = T.pack . show . view dmId
+    getSender      = Just . view dmSenderScreenName
+    getMessage     = Just . view dmText
+    getMetadata dm = [ ("From", [dm ^. dmSenderScreenName])
+                     , ("To"  , [dm ^. dmRecipientScreeName])
+                     , ("Date", [rfc822Date $ dm ^. dmCreatedAt])
+                     , ("ID"  , [T.pack . show $ dm ^. dmId])
+                     ]
+    getSent        = Just . view dmCreatedAt
+
+-- * Types
 
 unString :: MonadPlus m => Value -> m T.Text
 unString (Object _) = mzero
@@ -160,3 +272,112 @@ DownloadCache json
     UniqueDownloadUrl url params
     deriving Show Eq
 |]
+
+-- * Google.Types.DSL
+
+-- * Google DSL
+
+-- TODO: Can I add a phantom type that will allow me to say when batch actions
+-- aren't appropriate? How would combining these work?
+-- TODO: Or even better, to trace dependencies between calls automatically and
+-- use that to know when actions can be batched?
+data GoogleActionF a where
+    GGet  :: (FromJSON response, ToPostObject response)
+          => URI -> [GetParam]         -> (response -> a) -> GoogleActionF a
+    GPost :: (FromJSON response, Postable post)
+          => URI -> [GetParam] -> post -> (response -> a) -> GoogleActionF a
+
+instance Functor GoogleActionF where
+    fmap f (GGet  uri ps   r) = GGet  uri ps   $ f . r
+    fmap f (GPost uri ps p r) = GPost uri ps p $ f . r
+
+type GoogleAction n = Free GoogleActionF n
+
+-- * Google.Types.Monad
+
+-- * Google monad
+
+data GoogleData
+    = GoogleData
+    { _gdManager     :: !Manager
+    , _gdAccessToken :: !AccessToken
+    , _gdSqlBackend  :: !SqlBackend
+    } deriving (Typeable, Generic)
+$(makeLenses ''GoogleData)
+
+data GoogleState
+    = GoogleState
+    { _gsSession :: !(Maybe (Entity ArchiveSession))
+    , _gsSource  :: !PostSource
+    } deriving (Typeable, Generic)
+$(makeLenses ''GoogleState)
+
+newtype GoogleT m a
+    = GoogleT { unGoogleT :: RWST GoogleData () GoogleState
+                                  (LoggingT (ExceptT String m))
+                                  a }
+    deriving ( Functor, Applicative, Monad, MonadReader GoogleData
+             , MonadState GoogleState, MonadIO, MonadLogger, Generic
+             )
+
+type Google = GoogleT IO
+
+instance MonadTrans GoogleT where
+    lift = GoogleT . lift . lift . lift
+
+instance MonadThrow m => MonadThrow (GoogleT m) where
+    throwM = GoogleT . lift . lift . throwE . show
+
+instance MonadTransControl GoogleT where
+    type StT GoogleT a = StT (RWST GoogleData () GoogleState) a
+    liftWith runG = GoogleT $ liftWith $ \runR ->
+                              liftWith $ \runL ->
+                              liftWith $ \runE ->
+                                runG $ (either fail return =<<)
+                                     . runE . runL . runR . unGoogleT
+    restoreT = GoogleT . restoreT . restoreT . restoreT . fmap Right
+
+instance MonadBase b m => MonadBase b (GoogleT m) where
+    liftBase = liftBaseDefault
+
+instance MonadBaseControl b m => MonadBaseControl b (GoogleT m) where
+    type StM (GoogleT m) a = ComposeSt GoogleT m a
+    liftBaseWith = defaultLiftBaseWith
+    restoreM     = defaultRestoreM
+
+runGoogle :: PostSource -> Manager -> AccessToken -> SqlBackend -> Google a
+          -> Script a
+runGoogle src m t s = runStderrLoggingT . runGoogleL src m t s
+
+runGoogleL :: PostSource -> Manager -> AccessToken -> SqlBackend -> Google a
+           -> LoggingT (ExceptT String IO) a
+runGoogleL src m t s g =
+    fst3 <$> runRWST (unGoogleT g) (GoogleData m t s) (GoogleState Nothing src)
+    where
+        fst3 (a, _, _) = a
+
+currentManager :: Monad m => GoogleT m Manager
+currentManager = view gdManager
+
+currentAccessToken :: Monad m => GoogleT m AccessToken
+currentAccessToken = view gdAccessToken
+
+currentSqlBackend :: Monad m => GoogleT m SqlBackend
+currentSqlBackend = view gdSqlBackend
+
+currentManagerToken :: Monad m => GoogleT m (Manager, AccessToken)
+currentManagerToken = asks (_gdManager &&& _gdAccessToken)
+
+liftSql :: Monad m
+        => ReaderT SqlBackend (LoggingT (ExceptT String m)) a -> GoogleT m a
+liftSql sql = GoogleT . RWST $ \r s ->
+    (, s, mempty) <$> runReaderT sql (r ^. gdSqlBackend)
+
+liftE :: Script a -> Google a
+liftE = GoogleT . lift . lift
+
+liftG :: IO (OAuth2Result a) -> Google a
+liftG = liftE . liftSG
+
+liftSG :: IO (OAuth2Result a) -> Script a
+liftSG = ExceptT . fmap (first L8.unpack)
