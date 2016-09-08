@@ -7,19 +7,19 @@ module Dime.Google.Messages where
 import           Control.Applicative
 import           Control.Lens
 import           Data.Aeson
-import qualified Data.ByteString.Lazy as BL
+import qualified Data.ByteString.Lazy      as BL
 import           Data.Foldable
-import qualified Data.HashSet         as S
+import qualified Data.HashSet              as S
 import           Data.Maybe
 import           Data.Monoid
-import qualified Data.Sequence        as Seq
+import qualified Data.Sequence             as Seq
 import           Data.Text.Encoding
 import           Debug.Trace
-import           Network.Wreq         hiding (get, post)
+import           Network.Wreq              hiding (get, post)
 
-import           Dime.Google.DSL      hiding (get)
-import qualified Dime.Google.DSL      as DSL
-import           Dime.Google.Network
+import           Dime.Google.DSL           hiding (get)
+import qualified Dime.Google.DSL           as DSL
+import           Dime.Google.Network.Utils
 import           Dime.Google.Types
 
 

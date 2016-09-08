@@ -26,6 +26,7 @@ library
                      , Dime.Google.Labels
                      , Dime.Google.Messages
                      , Dime.Google.Network
+                     , Dime.Google.Network.Utils
                      , Dime.Google.Threads
                      , Dime.Google.Types
                      , Dime.Resume

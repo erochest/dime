@@ -23,9 +23,17 @@ import           Web.Twitter.Conduit.Request
 import           Web.Twitter.Conduit.Types
 import           Web.Twitter.Types
 
+import           Dime.Auth
+import           Dime.Config
 import           Dime.Types
 import           Dime.Utils
 
+
+readTWInfo :: FilePath -> Script TWInfo
+readTWInfo = getTWInfo' <=< readConfig
+
+getTWInfo' :: LoginInfo -> Script TWInfo
+getTWInfo' = (?? "You have to call 'dime twitter-login' first.") . getTWInfo
 
 downloadDMs :: TWInfo -> Script [DirectMessage]
 downloadDMs twInfo = scriptIO $ do

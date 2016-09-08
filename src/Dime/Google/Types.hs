@@ -108,6 +108,10 @@ currentSqlBackend = view gdSqlBackend
 currentManagerToken :: Monad m => GoogleT m (Manager, AccessToken)
 currentManagerToken = asks (_gdManager &&& _gdAccessToken)
 
+liftSql :: ReaderT SqlBackend (LoggingT (ExceptT String m)) a -> GoogleT m a
+liftSql r =
+    GoogleT $ withReaderT (view gdSqlBackend) r
+
 liftE :: Script a -> Google a
 liftE = GoogleT . lift . lift
 
@@ -281,6 +285,9 @@ instance ToJSON Header where
 
 instance FromJSON Header where
     parseJSON = genericParseJSON (googleOptions 7)
+
+headerToParam :: Header -> GetParam
+headerToParam (Header n v) = (n, [v])
 
 -- *** Attachment
 

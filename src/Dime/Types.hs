@@ -143,7 +143,7 @@ Post json
     message T.Text
     metadata (JSONField [GetParam])
     raw (JSONField PostObject)
-    sent UTCTime
+    sent UTCTime Maybe
     created UTCTime default=CURRENT_TIME
     sessionId ArchiveSessionId
     UniquePostSourceId sourceId

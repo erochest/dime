@@ -20,12 +20,7 @@ import           Debug.Trace
 import           System.Directory
 import           System.FilePath
 import           Text.Groom
-import           Web.Twitter.Conduit.Types
 import           Web.Twitter.Types
-
-import           Dime.Auth
-import           Dime.Config
-import           Dime.Types
 
 
 walkDirectoryTree :: FilePath -> Script [FilePath]
@@ -71,12 +66,6 @@ foldUntilM p f x = do
     if r
        then return x
        else foldUntilM p f =<< f x
-
-readTWInfo :: FilePath -> Script TWInfo
-readTWInfo = getTWInfo' <=< readConfig
-
-getTWInfo' :: LoginInfo -> Script TWInfo
-getTWInfo' = (?? "You have to call 'dime twitter-login' first.") . getTWInfo
 
 bothA :: Applicative m => (m a, m b) -> m (a, b)
 bothA (ma, mb) = (,) <$> ma <*> mb

@@ -7,12 +7,12 @@ module Dime.Google.Threads where
 import           Data.Foldable
 import           Data.Maybe
 import           Data.Monoid
-import qualified Data.Sequence       as Seq
+import qualified Data.Sequence             as Seq
 import           Data.Text.Encoding
 
 import           Dime.Google.DSL
-import qualified Dime.Google.DSL     as DSL
-import           Dime.Google.Network
+import qualified Dime.Google.DSL           as DSL
+import           Dime.Google.Network.Utils
 import           Dime.Google.Types
 
 
