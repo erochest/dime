@@ -15,12 +15,12 @@ import           Data.Time
 import           Database.Persist
 import           Network.OAuth.OAuth2
 
-import           Dime.Google.Network.Utils
+import           Dime.Network.Utils
 import           Dime.Types
 import           Dime.Types.Fields
 
 
-queueURL :: PostSource -> URI -> [GetParam] -> Google (Entity DownloadCache)
+queueURL :: PostSource -> URI -> [GetParam] -> Dime (Entity DownloadCache)
 queueURL src uri params = do
     now <- liftIO getCurrentTime
     let uri' = B8.unpack uri
@@ -28,7 +28,7 @@ queueURL src uri params = do
         dl   = DownloadCache uri' ps src Nothing now Nothing Nothing
     liftSql $ insertEntity dl
 
-nextURL :: Google (Maybe (Entity DownloadCache))
+nextURL :: Dime (Maybe (Entity DownloadCache))
 nextURL = runMaybeT $ do
     now <- liftIO getCurrentTime
     (Entity k _) <- MaybeT
@@ -37,7 +37,7 @@ nextURL = runMaybeT $ do
     Entity k <$> lift (liftSql $ updateGet k [DownloadCacheStarted =. Just now])
 
 getCacheURL :: (FromJSON a, ToPostObject a)
-            => ArchiveSessionId -> Entity DownloadCache -> Google a
+            => ArchiveSessionId -> Entity DownloadCache -> Dime a
 getCacheURL sId (Entity dcId d) =
     maybe download return =<< runMaybeT (
         hoistMaybe . fromPostObject . unJSON . view postRaw

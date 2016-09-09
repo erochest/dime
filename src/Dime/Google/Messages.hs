@@ -19,7 +19,7 @@ import           Network.Wreq              hiding (get, post)
 
 import           Dime.Google.DSL           hiding (get)
 import qualified Dime.Google.DSL           as DSL
-import           Dime.Google.Network.Utils
+import           Dime.Network.Utils
 import           Dime.Types
 import           Dime.Types.Google
 
@@ -59,7 +59,7 @@ list labelIds maxResults pageToken q =
     where
         url = "/gmail/v1/users/me/messages"
 
-listAll :: [LabelId] -> Maybe Query -> Google [MessageShort]
+listAll :: [LabelId] -> Maybe Query -> Dime [MessageShort]
 listAll labelIds q = singleActions $ toList <$> go Nothing
     where
         go pt = do
@@ -69,6 +69,6 @@ listAll labelIds q = singleActions $ toList <$> go Nothing
             mappend ms <$> maybe (return mempty) (go . Just)
                                  (_messagesNextPageToken ml)
 
-listAll' :: [LabelId] -> Maybe Query -> Google [Message]
+listAll' :: [LabelId] -> Maybe Query -> Dime [Message]
 listAll' labelIds q =   singleActions . mapM (get . _messageShortId)
                     =<< listAll labelIds q

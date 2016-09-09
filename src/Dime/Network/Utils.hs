@@ -2,7 +2,7 @@
 {-# LANGUAGE TupleSections     #-}
 
 
-module Dime.Google.Network.Utils where
+module Dime.Network.Utils where
 
 
 import           Control.Concurrent         (threadDelay)
@@ -31,13 +31,13 @@ baseURL = "https://www.googleapis.com"
 normURL :: URI -> String
 normURL = B8.unpack . mappend baseURL
 
-asJSON' :: FromJSON a => Response BL8.ByteString -> Google a
+asJSON' :: FromJSON a => Response BL8.ByteString -> Dime a
 asJSON' = liftE
         . hoistEither
         . (displayException `bimap` view responseBody)
         . asJSON
 
-getUncachedJSON :: FromJSON a => URI -> [GetParam] -> Google a
+getUncachedJSON :: FromJSON a => URI -> [GetParam] -> Dime a
 getUncachedJSON uri ps = do
     (m, t) <- currentManagerToken
     let opts' = defaults

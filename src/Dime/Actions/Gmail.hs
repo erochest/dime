@@ -46,7 +46,6 @@ import           Dime.Google
 import           Dime.Google.DSL              (batchActions, singleActions)
 import qualified Dime.Google.Labels           as Labels
 import qualified Dime.Google.Messages         as Messages
-import           Dime.Google.Network
 import qualified Dime.Google.Threads          as Threads
 import           Dime.Types
 import           Dime.Types.Google
@@ -112,7 +111,7 @@ importThread :: LabelId
              -> UserIndex
              -> (UserId, UserId)
              -> [DirectMessage]
-             -> Google ()
+             -> Dime ()
 importThread label ts ms ui (u1, u2) dms = do
     let toLoad =   fromMaybe dms'
                $   tailZ . (`L.dropWhile` dms') . (. view dmId) . (/=)
@@ -172,12 +171,12 @@ getThreadMessageId t =
     sequenceA (_threadId t, fmap _messageId . lastZ =<< _threadMessages t)
 
 insertThread :: Maybe (ThreadId, MessageId) -> [(MessageInfo, Mail)]
-             -> Google [Message]
+             -> Dime [Message]
 insertThread current ms = toList . snd <$> foldlM step (current, Seq.empty) ms
     where
         step :: (Maybe (ThreadId, MessageId), Seq.Seq Message)
              -> (MessageInfo, Mail)
-             -> Google (Maybe (ThreadId, MessageId), Seq.Seq Message)
+             -> Dime (Maybe (ThreadId, MessageId), Seq.Seq Message)
         step (t, accum) (mi, m) = do
             let (mi', m') = thread t mi m
             message <-  singleActions
@@ -210,12 +209,12 @@ insertThread current ms = toList . snd <$> foldlM step (current, Seq.empty) ms
                 }
             )
 
-        toRaw :: MessageInfo -> Mail -> Google RawMessage
+        toRaw :: MessageInfo -> Mail -> Dime RawMessage
         toRaw MessageInfo{_messageInfoLabelIds=l,_messageInfoThreadId=t} m = do
             m' <- BL.toStrict <$> liftIO (renderMail' m)
             return $ RawMessage (JSBytes m') l t
 
-dumpSMS :: Google ()
+dumpSMS :: Dime ()
 dumpSMS = do
     labelIndex <- singleActions Labels.index
     let smsLabel = mapMaybe (`M.lookup` labelIndex) ["SMS"]
@@ -254,7 +253,7 @@ dumpSMS = do
              $ toMessageRow <$> messages
     where
         writeCSV :: Csv.ToNamedRecord a
-                 => FilePath -> Csv.Header -> [a] -> Google ()
+                 => FilePath -> Csv.Header -> [a] -> Dime ()
         writeCSV fp h = liftIO . BL.writeFile fp . Csv.encodeByName h
 
         toRow :: Csv.Header -> ((Integer, Int), M.HashMap T.Text Int)
@@ -323,7 +322,7 @@ dumpSMS = do
         headerLU _ [] = Nothing
         headerLU _ _  = Nothing
 
-readJSON :: FromJSON a => FilePath -> Google a
+readJSON :: FromJSON a => FilePath -> Dime a
 readJSON =   liftE . hoistEither . eitherDecodeStrict'
          <=< liftIO . B.readFile
 
@@ -341,12 +340,12 @@ luEmail k = maybe k addressEmail . M.lookup k
 contactAddress :: Contact -> Address
 contactAddress (Contact n e) = Address (Just n) e
 
-newMessageId :: Google MessageId
+newMessageId :: Dime MessageId
 newMessageId =
     (<> "@twitter-dm.dime.local") . T.cons '<' . toText <$> liftIO uuid
 
 mail :: LabelId -> UserIndex -> DirectMessage
-     -> Google (Maybe (MessageInfo, Mail))
+     -> Dime (Maybe (MessageInfo, Mail))
 mail l ui dm = do
     mid <-  newMessageId
     now <-  rfc822Date <$> liftIO getCurrentTime

@@ -12,7 +12,7 @@ import           Data.Text.Encoding
 
 import           Dime.Google.DSL
 import qualified Dime.Google.DSL           as DSL
-import           Dime.Google.Network.Utils
+import           Dime.Network.Utils
 import           Dime.Types.Google
 import           Dime.Types
 
@@ -34,7 +34,7 @@ list labelIds maxResults pageToken q =
     where
         url = "/gmail/v1/users/me/threads"
 
-listAll :: [LabelId] -> Maybe Query -> Google [Thread]
+listAll :: [LabelId] -> Maybe Query -> Dime [Thread]
 listAll labelIds q = singleActions $ toList <$> go Nothing
     where
         go pt = do

@@ -297,86 +297,84 @@ type GoogleAction n = Free GoogleActionF n
 
 -- * Google monad
 
-data GoogleData
-    = GoogleData
-    { _gdManager     :: !Manager
-    , _gdAccessToken :: !AccessToken
-    , _gdSqlBackend  :: !SqlBackend
+data DimeData
+    = DimeData
+    { _ddManager     :: !Manager
+    , _ddAccessToken :: !AccessToken
+    , _ddSqlBackend  :: !SqlBackend
     } deriving (Typeable, Generic)
-$(makeLenses ''GoogleData)
+$(makeLenses ''DimeData)
 
-data GoogleState
-    = GoogleState
-    { _gsSession :: !(Maybe (Entity ArchiveSession))
-    , _gsSource  :: !PostSource
+data DimeState
+    = DimeState
+    { _dsSession :: !(Maybe (Entity ArchiveSession))
+    , _dsSource  :: !PostSource
     } deriving (Typeable, Generic)
-$(makeLenses ''GoogleState)
+$(makeLenses ''DimeState)
 
-newtype GoogleT m a
-    = GoogleT { unGoogleT :: RWST GoogleData () GoogleState
-                                  (LoggingT (ExceptT String m))
-                                  a }
-    deriving ( Functor, Applicative, Monad, MonadReader GoogleData
-             , MonadState GoogleState, MonadIO, MonadLogger, Generic
+newtype DimeT m a
+    = DimeT { unDimeT :: RWST DimeData () DimeState
+                              (LoggingT (ExceptT String m))
+                              a }
+    deriving ( Functor, Applicative, Monad, MonadReader DimeData
+             , MonadState DimeState, MonadIO, MonadLogger, Generic
              )
 
-type Google = GoogleT IO
+type Dime = DimeT IO
 
-instance MonadTrans GoogleT where
-    lift = GoogleT . lift . lift . lift
+instance MonadTrans DimeT where
+    lift = DimeT . lift . lift . lift
 
-instance MonadThrow m => MonadThrow (GoogleT m) where
-    throwM = GoogleT . lift . lift . throwE . show
+instance MonadThrow m => MonadThrow (DimeT m) where
+    throwM = DimeT . lift . lift . throwE . show
 
-instance MonadTransControl GoogleT where
-    type StT GoogleT a = StT (RWST GoogleData () GoogleState) a
-    liftWith runG = GoogleT $ liftWith $ \runR ->
-                              liftWith $ \runL ->
-                              liftWith $ \runE ->
+instance MonadTransControl DimeT where
+    type StT DimeT a = StT (RWST DimeData () DimeState) a
+    liftWith runG = DimeT $ liftWith $ \runR ->
+                            liftWith $ \runL ->
+                            liftWith $ \runE ->
                                 runG $ (either fail return =<<)
-                                     . runE . runL . runR . unGoogleT
-    restoreT = GoogleT . restoreT . restoreT . restoreT . fmap Right
+                                     . runE . runL . runR . unDimeT
+    restoreT = DimeT . restoreT . restoreT . restoreT . fmap Right
 
-instance MonadBase b m => MonadBase b (GoogleT m) where
+instance MonadBase b m => MonadBase b (DimeT m) where
     liftBase = liftBaseDefault
 
-instance MonadBaseControl b m => MonadBaseControl b (GoogleT m) where
-    type StM (GoogleT m) a = ComposeSt GoogleT m a
+instance MonadBaseControl b m => MonadBaseControl b (DimeT m) where
+    type StM (DimeT m) a = ComposeSt DimeT m a
     liftBaseWith = defaultLiftBaseWith
     restoreM     = defaultRestoreM
 
-runGoogle :: PostSource -> Manager -> AccessToken -> SqlBackend -> Google a
-          -> Script a
-runGoogle src m t s = runStderrLoggingT . runGoogleL src m t s
+runDime :: PostSource -> Manager -> AccessToken -> SqlBackend -> Dime a
+        -> Script a
+runDime src m t s = runStderrLoggingT . runDimeL src m t s
 
-runGoogleL :: PostSource -> Manager -> AccessToken -> SqlBackend -> Google a
-           -> LoggingT (ExceptT String IO) a
-runGoogleL src m t s g =
-    fst3 <$> runRWST (unGoogleT g) (GoogleData m t s) (GoogleState Nothing src)
-    where
-        fst3 (a, _, _) = a
+runDimeL :: PostSource -> Manager -> AccessToken -> SqlBackend -> Dime a
+         -> LoggingT (ExceptT String IO) a
+runDimeL src m t s g =
+    view _1 <$> runRWST (unDimeT g) (DimeData m t s) (DimeState Nothing src)
 
-currentManager :: Monad m => GoogleT m Manager
-currentManager = view gdManager
+currentManager :: Monad m => DimeT m Manager
+currentManager = view ddManager
 
-currentAccessToken :: Monad m => GoogleT m AccessToken
-currentAccessToken = view gdAccessToken
+currentAccessToken :: Monad m => DimeT m AccessToken
+currentAccessToken = view ddAccessToken
 
-currentSqlBackend :: Monad m => GoogleT m SqlBackend
-currentSqlBackend = view gdSqlBackend
+currentSqlBackend :: Monad m => DimeT m SqlBackend
+currentSqlBackend = view ddSqlBackend
 
-currentManagerToken :: Monad m => GoogleT m (Manager, AccessToken)
-currentManagerToken = asks (_gdManager &&& _gdAccessToken)
+currentManagerToken :: Monad m => DimeT m (Manager, AccessToken)
+currentManagerToken = asks (_ddManager &&& _ddAccessToken)
 
 liftSql :: Monad m
-        => ReaderT SqlBackend (LoggingT (ExceptT String m)) a -> GoogleT m a
-liftSql sql = GoogleT . RWST $ \r s ->
-    (, s, mempty) <$> runReaderT sql (r ^. gdSqlBackend)
+        => ReaderT SqlBackend (LoggingT (ExceptT String m)) a -> DimeT m a
+liftSql sql = DimeT . RWST $ \r s ->
+    (, s, mempty) <$> runReaderT sql (r ^. ddSqlBackend)
 
-liftE :: Script a -> Google a
-liftE = GoogleT . lift . lift
+liftE :: Script a -> Dime a
+liftE = DimeT . lift . lift
 
-liftG :: IO (OAuth2Result a) -> Google a
+liftG :: IO (OAuth2Result a) -> Dime a
 liftG = liftE . liftSG
 
 liftSG :: IO (OAuth2Result a) -> Script a

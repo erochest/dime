@@ -28,7 +28,7 @@ import qualified Web.Twitter.Conduit          as C
 
 import           Dime.Auth
 import           Dime.Config
-import           Dime.Google.Network
+import           Dime.Google
 import           Dime.Types
 import qualified Dime.Types                   as D
 

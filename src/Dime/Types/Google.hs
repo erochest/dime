@@ -1,0 +1,394 @@
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE TemplateHaskell    #-}
+
+
+module Dime.Types.Google where
+
+
+import           Control.Lens
+import           Control.Monad
+import           Data.Aeson.Types
+import           Data.ByteString                       (ByteString)
+import           Data.Char
+import           Data.Data
+import           Data.Monoid                           ((<>))
+import qualified Data.Text                             as T
+import           Data.Text.Encoding
+import           GHC.Generics                          hiding (to)
+import           Network.HTTP.Client.Internal          hiding ((<>))
+import           Network.HTTP.Client.MultipartFormData
+import           Network.HTTP.Types.Header             (hContentType)
+import           Network.HTTP.Types.Method
+import           Network.Wreq.Types                    hiding (Options, Payload)
+
+
+-- * Google.Types
+
+-- * Google data types
+
+-- ** Utilities
+
+googleOptions :: Int -> Options
+googleOptions n = defaultOptions
+                { fieldLabelModifier = lowerFirst . drop n
+                }
+    where
+        lowerFirst []     = []
+        lowerFirst (x:xs) = toLower x : xs
+
+-- ** Type aliases
+
+type LabelId      = T.Text
+type LabelName    = T.Text
+type ThreadId     = T.Text
+type PageToken    = T.Text
+type Query        = T.Text
+type MessageId    = T.Text
+type MessageRaw   = T.Text
+type HistoryId    = T.Text
+type AttachmentId = T.Text
+
+-- ** Types
+-- *** JSBytes (ByteString wrapper)
+
+newtype JSBytes = JSBytes { unBytes :: ByteString }
+                deriving (Show, Eq, Data, Typeable, Generic)
+$(makeLenses ''JSBytes)
+
+instance ToJSON JSBytes where
+    toJSON = String . decodeUtf8 . unBytes
+
+instance FromJSON JSBytes where
+    parseJSON (String s) = return . JSBytes $ encodeUtf8 s
+    parseJSON _          = mzero
+
+-- *** Label
+
+data MessageListVisibility = ShowMessage | HideMessage
+                           deriving (Show, Eq, Data, Typeable, Generic)
+$(makePrisms ''MessageListVisibility)
+
+instance ToJSON MessageListVisibility where
+    toJSON ShowMessage = String "show"
+    toJSON HideMessage = String "hide"
+
+instance FromJSON MessageListVisibility where
+    parseJSON (String "show") = return ShowMessage
+    parseJSON (String "hide") = return HideMessage
+    parseJSON _               = mzero
+
+data LabelListVisibility = ShowLabel | HideLabel | ShowIfUnread
+                         deriving (Show, Eq, Data, Typeable, Generic)
+$(makePrisms ''LabelListVisibility)
+
+instance ToJSON LabelListVisibility where
+    toJSON ShowLabel    = String "labelShow"
+    toJSON HideLabel    = String "labelHide"
+    toJSON ShowIfUnread = String "labelShowIfUnread"
+
+instance FromJSON LabelListVisibility where
+    parseJSON (String "labelShow")         = return ShowLabel
+    parseJSON (String "labelHide")         = return HideLabel
+    parseJSON (String "labelShowIfUnread") = return ShowIfUnread
+    parseJSON _                            = mzero
+
+data LabelType = System | User
+               deriving (Show, Eq, Data, Typeable, Generic)
+$(makePrisms ''LabelType)
+
+instance ToJSON LabelType where
+    toJSON System = String "system"
+    toJSON User   = String "user"
+
+instance FromJSON LabelType where
+    parseJSON (String "system") = return System
+    parseJSON (String "user")   = return User
+    parseJSON _                 = mzero
+
+data Label
+    = Label
+    { _labelId                    :: !LabelId
+    , _labelName                  :: !LabelName
+    , _labelType                  :: !(Maybe LabelType)
+    , _labelMessageListVisibility :: !(Maybe MessageListVisibility)
+    , _labelLabelListVisibility   :: !(Maybe LabelListVisibility)
+    , _labelMessagesTotal         :: !(Maybe Int)
+    , _labelMessagesUnread        :: !(Maybe Int)
+    , _labelThreadsTotal          :: !(Maybe Int)
+    , _labelThreadsUnread         :: !(Maybe Int)
+    } deriving (Show, Eq, Data, Typeable, Generic)
+$(makeLenses ''Label)
+
+instance ToJSON Label where
+    toJSON     = genericToJSON     (googleOptions 6)
+    toEncoding = genericToEncoding (googleOptions 6)
+
+instance FromJSON Label where
+    parseJSON = genericParseJSON (googleOptions 6)
+
+data Labels
+    = Labels
+    { _labelsLabels :: [Label]
+    } deriving (Show, Eq, Data, Typeable, Generic)
+
+instance ToJSON Labels where
+    toJSON     = genericToJSON     (googleOptions 7)
+    toEncoding = genericToEncoding (googleOptions 7)
+
+instance FromJSON Labels where
+    parseJSON = genericParseJSON (googleOptions 7)
+
+data LabelInfo
+    = LabelInfo
+    { _labelInfoName                  :: !LabelName
+    , _labelInfoLabelListVisibility   :: !LabelListVisibility
+    , _labelInfoMessageListVisibility :: !MessageListVisibility
+    } deriving (Show, Eq, Data, Typeable, Generic)
+$(makeLenses ''LabelInfo)
+
+instance ToJSON LabelInfo where
+    toJSON     = genericToJSON     (googleOptions 10)
+    toEncoding = genericToEncoding (googleOptions 10)
+
+instance FromJSON LabelInfo where
+    parseJSON = genericParseJSON (googleOptions 10)
+
+-- *** Header
+
+data Header
+    = Header
+    { _headerName  :: !T.Text
+    , _headerValue :: !T.Text
+    } deriving (Show, Eq, Data, Typeable, Generic)
+$(makeLenses ''Header)
+
+instance ToJSON Header where
+    toJSON     = genericToJSON     (googleOptions 7)
+    toEncoding = genericToEncoding (googleOptions 7)
+
+instance FromJSON Header where
+    parseJSON = genericParseJSON (googleOptions 7)
+
+headerToParam :: Header -> (T.Text, [T.Text])
+headerToParam (Header n v) = (n, [v])
+
+-- *** Attachment
+
+data Attachment
+    = Attachment
+    { _attachmentId   :: !(Maybe AttachmentId)
+    , _attachmentSize :: !Int
+    , _attachmentData :: !(Maybe JSBytes)
+    } deriving (Show, Eq, Data, Typeable, Generic)
+$(makeLenses ''Attachment)
+
+instance ToJSON Attachment where
+    toJSON     = genericToJSON     (googleOptions 11)
+    toEncoding = genericToEncoding (googleOptions 11)
+
+instance FromJSON Attachment where
+    parseJSON = genericParseJSON (googleOptions 11)
+
+data AttachmentInfo
+    = AttachmentInfo
+    { _attachmentInfoSize :: !(Maybe Int)
+    , _attachmentInfoData :: !JSBytes
+    } deriving (Show, Eq, Data, Typeable, Generic)
+$(makeLenses ''AttachmentInfo)
+
+instance ToJSON AttachmentInfo where
+    toJSON     = genericToJSON     (googleOptions 15)
+    toEncoding = genericToEncoding (googleOptions 15)
+
+instance FromJSON AttachmentInfo where
+    parseJSON = genericParseJSON (googleOptions 15)
+
+-- *** Payload
+
+data Payload
+    = Payload
+    { _payloadPartId   :: !(Maybe T.Text)
+    , _payloadMimeType :: !T.Text
+    , _payloadFilename :: !T.Text
+    , _payloadHeaders  :: !(Maybe [Header])
+    , _payloadBody     :: !Attachment
+    , _payloadParts    :: !(Maybe [Payload])
+    } deriving (Show, Eq, Data, Typeable, Generic)
+$(makeLenses ''Payload)
+
+instance ToJSON Payload where
+    toJSON     = genericToJSON     (googleOptions 8)
+    toEncoding = genericToEncoding (googleOptions 8)
+
+instance FromJSON Payload where
+    parseJSON = genericParseJSON (googleOptions 8)
+
+data PayloadInfo
+    = PayloadInfo
+    { _payloadInfoMimeType :: !T.Text
+    , _payloadInfoFilename :: !T.Text
+    , _payloadInfoHeaders  :: ![Header]
+    } deriving (Show, Eq, Data, Typeable, Generic)
+$(makeLenses ''PayloadInfo)
+
+instance ToJSON PayloadInfo where
+    toJSON     = genericToJSON     (googleOptions 12)
+    toEncoding = genericToEncoding (googleOptions 12)
+
+instance FromJSON PayloadInfo where
+    parseJSON = genericParseJSON (googleOptions 12)
+
+-- *** RawMessage
+
+data RawMessage
+    = RawMessage
+    { _rawMessageRaw      :: !JSBytes
+    , _rawMessageLabelIds :: !(Maybe [LabelId])
+    , _rawMessageThreadId :: !(Maybe ThreadId)
+    } deriving (Show, Eq, Data, Typeable, Generic)
+
+instance ToJSON RawMessage where
+    toJSON     = genericToJSON     (googleOptions 11)
+    toEncoding = genericToEncoding (googleOptions 11)
+
+instance FromJSON RawMessage where
+    parseJSON = genericParseJSON (googleOptions 11)
+
+-- *** Messages
+
+data MessageShort
+    = MessageShort
+    { _messageShortId       :: !MessageId
+    , _messageShortThreadId :: !ThreadId
+    } deriving (Show, Eq, Data, Typeable, Generic)
+
+instance ToJSON MessageShort where
+    toJSON     = genericToJSON     (googleOptions 13)
+    toEncoding = genericToEncoding (googleOptions 13)
+
+instance FromJSON MessageShort where
+    parseJSON = genericParseJSON (googleOptions 13)
+
+data Message
+    = Message
+    { _messageId           :: !MessageId
+    , _messageThreadId     :: !ThreadId
+    , _messageLabelIds     :: ![LabelId]
+    , _messageSnippet      :: !(Maybe T.Text)
+    , _messageHistoryId    :: !HistoryId
+    , _messageInternalDate :: !T.Text
+    , _messagePayload      :: !Payload
+    , _messageSizeEstimate :: !Int
+    , _messageRaw          :: !(Maybe JSBytes)
+    } deriving (Show, Eq, Data, Typeable, Generic)
+$(makeLenses ''Message)
+
+instance ToJSON Message where
+    toJSON     = genericToJSON     (googleOptions 8)
+    toEncoding = genericToEncoding (googleOptions 8)
+
+instance FromJSON Message where
+    parseJSON = genericParseJSON (googleOptions 8)
+
+data MessageInfo
+    = MessageInfo
+    { _messageInfoThreadId :: !(Maybe ThreadId)
+    , _messageInfoLabelIds :: !(Maybe [LabelId])
+    , _messageInfoPayload  :: !PayloadInfo
+    , _messageInfoRaw      :: !(Maybe JSBytes)
+    } deriving (Show, Eq, Data, Typeable, Generic)
+$(makeLenses ''MessageInfo)
+
+instance ToJSON MessageInfo where
+    toJSON     = genericToJSON     (googleOptions 12)
+    toEncoding = genericToEncoding (googleOptions 12)
+
+instance FromJSON MessageInfo where
+    parseJSON = genericParseJSON (googleOptions 12)
+
+data MessageList
+    = MessageList
+    { _messagesMessages           :: ![MessageShort]
+    , _messagesNextPageToken      :: !(Maybe PageToken)
+    , _messagesResultSizeEstimate :: !Int
+    } deriving (Show, Eq, Data, Typeable, Generic)
+$(makeLenses ''MessageList)
+
+instance ToJSON MessageList where
+    toJSON     = genericToJSON     (googleOptions 9)
+    toEncoding = genericToEncoding (googleOptions 9)
+
+instance FromJSON MessageList where
+    parseJSON = genericParseJSON (googleOptions 9)
+
+-- *** Thread
+
+data Thread
+    = Thread
+    { _threadId        :: !ThreadId
+    , _threadSnippet   :: !T.Text
+    , _threadHistoryId :: !HistoryId
+    , _threadMessages  :: !(Maybe [Message])
+    } deriving (Show, Eq, Data, Typeable, Generic)
+$(makeLenses ''Thread)
+
+instance ToJSON Thread where
+    toJSON     = genericToJSON     (googleOptions 7)
+    toEncoding = genericToEncoding (googleOptions 7)
+
+instance FromJSON Thread where
+    parseJSON = genericParseJSON (googleOptions 7)
+
+data ThreadList
+    = ThreadList
+    { _threadsThreads            :: !(Maybe [Thread])
+    , _threadsNextPageToken      :: !(Maybe PageToken)
+    , _threadsResultSizeEstimate :: !Int
+    } deriving (Show, Eq, Data, Typeable, Generic)
+$(makeLenses ''ThreadList)
+
+instance ToJSON ThreadList where
+    toJSON     = genericToJSON     (googleOptions 8)
+    toEncoding = genericToEncoding (googleOptions 8)
+
+instance FromJSON ThreadList where
+    parseJSON = genericParseJSON (googleOptions 8)
+
+-- *** MultipartRelated
+
+newtype MultipartRelated = MultiRelated { unRelate :: [Part] }
+                         deriving (Show, Typeable, Generic)
+$(makeLenses ''MultipartRelated)
+
+instance Postable MultipartRelated where
+    -- copied and pasted from Network.HTTP.Client.MultipartFormData.
+    -- Yuck.
+    -- Brittle.
+    postPayload (MultiRelated ps) req = do
+        boundary <- webkitBoundary
+        body <- renderParts boundary ps
+        return $ req
+               { method = methodPost
+               , requestHeaders =
+                   (hContentType , "multipart/related; boundary=" <> boundary)
+                    : filter (\(x, _) -> x /= hContentType) (requestHeaders req)
+               , requestBody = body
+               }
+
+-- *** Contact
+
+data Contact
+    = Contact
+    { _contactName  :: !T.Text
+    , _contactEmail :: !T.Text
+    } deriving (Show, Eq, Data, Typeable, Generic)
+$(makeLenses ''Contact)
+
+instance ToJSON Contact where
+    toJSON     = genericToJSON     (googleOptions 8)
+    toEncoding = genericToEncoding (googleOptions 8)
+
+instance FromJSON Contact where
+    parseJSON = genericParseJSON (googleOptions 8)

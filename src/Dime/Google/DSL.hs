@@ -11,17 +11,17 @@ import           Network.OAuth.OAuth2
 import           Network.Wreq.Types
 
 
-import           Dime.Google.Network
+import           Dime.Network
 import           Dime.Types
 
 
-singleActions :: GoogleAction n -> Google n
+singleActions :: GoogleAction n -> Dime n
 singleActions (Pure r) = return r
 singleActions (Free (GGet  u ps   k)) = getJSON'  u ps   >>= singleActions . k
 singleActions (Free (GPost u ps p k)) = postJSON' u ps p >>= singleActions . k
 
 -- TODO: batchActions
-batchActions :: GoogleAction n -> Google n
+batchActions :: GoogleAction n -> Dime n
 batchActions = singleActions
 
 get :: (ToPostObject n, FromJSON n) => URI -> [GetParam] -> GoogleAction n

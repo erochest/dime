@@ -25,9 +25,9 @@ library
                      , Dime.Google.DSL
                      , Dime.Google.Labels
                      , Dime.Google.Messages
-                     , Dime.Google.Network
-                     , Dime.Google.Network.Utils
                      , Dime.Google.Threads
+                     , Dime.Network
+                     , Dime.Network.Utils
                      , Dime.Resume
                      , Dime.Twitter
                      , Dime.Types
