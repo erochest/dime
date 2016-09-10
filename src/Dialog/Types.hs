@@ -1,22 +1,12 @@
-{-# LANGUAGE DeriveDataTypeable         #-}
--- {-# LANGUAGE DeriveFunctor              #-}
-{-# LANGUAGE DeriveGeneric              #-}
--- {-# LANGUAGE DeriveTraversable          #-}
--- {-# LANGUAGE GeneralizedNewtypeDeriving #-}
--- {-# LANGUAGE OverloadedLists            #-}
--- {-# LANGUAGE OverloadedStrings          #-}
--- {-# LANGUAGE RankNTypes                 #-}
--- {-# LANGUAGE RecordWildCards            #-}
--- {-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric      #-}
 
 
 module Dialog.Types where
 
 
--- import           Control.Lens
 import           Data.Data
--- import qualified Data.Text              as T
-import           GHC.Generics           hiding (to)
+import           GHC.Generics hiding (to)
 
 
 data Service = Twitter
