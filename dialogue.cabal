@@ -1,0 +1,79 @@
+name:                dialogue
+version:             0.0.0.0
+synopsis:            bundling dialogues
+-- description:         aggregating and bundling dialogues into an epub
+license:             Apache-2.0
+license-file:        LICENSE
+author:              Eric Rochester
+maintainer:          erochest@gmail.com
+-- copyright:           2016 Eric Rochester
+-- category:            
+build-type:          Simple
+-- extra-source-files:  
+cabal-version:       >=1.10
+
+library
+  exposed-modules:     Dialog.Actions.Default
+                     , Dialog.Types
+  -- other-modules:       
+  -- other-extensions:    
+  build-depends:       base >=4.8 && <4.9
+                     , errors
+                     , lens
+                     , text
+                     , text-format
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+
+executable dialogue
+  main-is:             Main.hs
+  other-modules:       Actions
+                     , Opts
+                     , Types
+  -- other-extensions:    
+  build-depends:       base >=4.8 && <5
+                     , dialogue
+                     , errors
+                     , text
+                     , optparse-applicative
+                     , errors
+  hs-source-dirs:      app
+  ghc-options:         -O2
+                       -threaded
+                       -rtsopts
+                       "-with-rtsopts=-N"
+                       -- -fprof-auto "-with-rtsopts=-N -p -s -h -i0.1"
+  default-language:    Haskell2010
+
+test-suite dialogue-specs
+  type:                exitcode-stdio-1.0
+  ghc-options:         -threaded -rtsopts
+  hs-source-dirs:      specs
+  main-is:             Specs.hs
+  other-modules:         Dialog.TypesSpec
+  build-depends:         base
+                       , dialogue
+                       , errors
+                       , lens
+                       , text
+                       , QuickCheck
+                       , smallcheck
+                       , hspec
+  default-language:    Haskell2010
+
+benchmark dialogue-bench
+  type:                exitcode-stdio-1.0
+  ghc-options:         -O2
+                       -threaded
+                       -rtsopts
+  hs-source-dirs:      bench
+  main-is:             Bench.hs
+  -- other-modules:         
+  build-depends:         base
+                       , dialogue
+                       , criterion
+  default-language:    Haskell2010
+
+source-repository head
+  type:     git
+  location: https://github.com/erochest/dialogue
