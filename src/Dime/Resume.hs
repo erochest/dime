@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes        #-}
 
 
 module Dime.Resume where
@@ -9,7 +10,7 @@ import           Control.Lens
 import           Control.Monad
 import           Control.Monad.Trans
 import           Data.Aeson
-import qualified Data.ByteString.Char8     as B8
+import qualified Data.ByteString.Char8 as B8
 import           Data.Foldable
 import           Data.Time
 import           Database.Persist
@@ -45,18 +46,19 @@ getCacheURL sId (Entity dcId d) =
             =<< hoistMaybe (d ^. downloadCachePostId)
         )
     where
-        download = do
+        download :: (FromJSON a, ToPostObject a) => Dime a
+        download =   save
+                 =<< getUncachedJSON (d ^. downloadCacheUrl    . to B8.pack)
+                                     (d ^. downloadCacheParams . to unJSON)
+
+        save :: ToPostObject po => po -> Dime po
+        save po = do
             now <- liftIO getCurrentTime
-            a   <- getUncachedJSON (d ^. downloadCacheUrl    . to B8.pack)
-                                   (d ^. downloadCacheParams . to unJSON)
-            case toPostObject a of
-                Just po -> do
-                    p   <- liftSql
-                        .  insertEntity
-                        $  Post (getSource a) (getSourceId a) (fold $ getSender a)
-                                (fold $ getMessage a) (JSONField $ getMetadata a)
-                                (JSONField po) (getSent a) now sId
-                    void $ liftSql
-                         $ updateGet dcId [DownloadCachePostId =. Just (entityKey p)]
-                    return a
-                Nothing -> return a
+            p   <- liftSql
+                .  insertEntity
+                $  Post (getSource po) (getSourceId po) (fold $ getSender po)
+                        (fold $ getMessage po) (JSONField $ getMetadata po)
+                        (JSONField $ toPostObject po) (getSent po) now sId
+            void $ liftSql
+                 $ updateGet dcId [DownloadCachePostId =. Just (entityKey p)]
+            return po

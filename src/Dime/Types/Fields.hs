@@ -8,28 +8,20 @@
 module Dime.Types.Fields where
 
 
--- import qualified Codec.Binary.QuotedPrintable as QP
--- import           Control.Applicative
--- import           Control.Error
 import           Control.Lens
 import           Data.Aeson
-import           Data.Bifunctor               (first)
-import           Data.ByteString.Lazy         (toStrict)
+import           Data.Bifunctor         (first)
+import           Data.ByteString.Lazy   (toStrict)
 import           Data.Data
--- import           Data.Foldable
-import           Data.Monoid ((<>))
-import qualified Data.Text                    as T
--- import           Data.Text.Encoding
--- import           Data.Time
--- import           Data.Time.Clock.POSIX
+import           Data.Monoid            ((<>))
+import qualified Data.Text              as T
 import           Database.Persist.Class
 import           Database.Persist.Sql
 import           Database.Persist.TH
-import           GHC.Generics                 hiding (to)
+import           GHC.Generics           hiding (to)
 import           Web.Twitter.Types
 
 import           Dime.Types.Google
--- import           Dime.Utils
 
 
 -- * PostSource

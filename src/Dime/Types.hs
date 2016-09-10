@@ -63,7 +63,7 @@ type GetParam = (T.Text, [T.Text])
 -- * Types.Source
 
 class ToPostObject o where
-    toPostObject   :: o -> Maybe PostObject
+    toPostObject   :: o -> PostObject
     fromPostObject :: PostObject -> Maybe o
     getSource      :: o -> PostSource
     getSourceId    :: o -> T.Text
@@ -72,9 +72,8 @@ class ToPostObject o where
     getMetadata    :: o -> [GetParam]
     getSent        :: o -> Maybe UTCTime
 
-    toPostObject   = const Nothing
     fromPostObject = const Nothing
-    getSource      = const Gmail
+    getSourceId    = const T.empty
     getSender      = const Nothing
     getMessage     = const Nothing
     getMetadata    = const []
@@ -82,23 +81,8 @@ class ToPostObject o where
 
 -- * Types.Fields
 
-instance ToPostObject Label where
-    getSourceId = _labelId
-
-instance ToPostObject Labels where
-    getSourceId = const T.empty
-
-instance ToPostObject MessageList where
-    getSourceId = const T.empty
-
-instance ToPostObject Thread where
-    getSourceId = _threadId
-
-instance ToPostObject ThreadList where
-    getSourceId = const T.empty
-
 instance ToPostObject Message where
-    toPostObject = Just . PostGmail
+    toPostObject = PostGmail
     fromPostObject (PostGmail   m) = Just m
     fromPostObject (PostTwitter _) = Nothing
 
@@ -128,7 +112,7 @@ instance ToPostObject Message where
                  . view messageInternalDate
 
 instance ToPostObject DirectMessage where
-    toPostObject   = Just . PostTwitter
+    toPostObject   = PostTwitter
     fromPostObject (PostGmail   _) = Nothing
     fromPostObject (PostTwitter m) = Just m
 

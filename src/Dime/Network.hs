@@ -45,7 +45,7 @@ postJSON uri d = do
     (m, t) <- currentManagerToken
     let opts = defaults
              & manager .~ Right m
-             & auth ?~ oauth2Bearer (accessToken t)
+             & auth    ?~ oauth2Bearer (accessToken t)
     asJSON' =<< liftIO (postWith opts (normURL uri) d)
 
 postJSON' :: (Postable a, FromJSON b)
