@@ -8,11 +8,11 @@ module Actions where
 
 import           Control.Error
 
-import           Dialog.Actions.Default
+import           Dialog.Actions.Login
 
 import           Types
 
 
 action :: Actions -> Script ()
 
-action Default{..} = defaultAction defaultInput defaultOutput
+action Login{..} = login loginAuthFile loginService

@@ -22,24 +22,32 @@ import           Types
 -- textOption :: Mod OptionFields T.Text -> Parser T.Text
 -- textOption = option (T.pack <$> str)
 
-outputOpt :: Parser FilePath
-outputOpt = strOption (  short 'o' <> long "output" <> metavar "OUTPUT_FILE"
-                      <> help "The file to write back to.")
+-- outputOpt :: Parser FilePath
+-- outputOpt = strOption (  short 'o' <> long "output" <> metavar "OUTPUT_FILE"
+--                       <> help "The file to write back to.")
 
-inputOpt :: Parser FilePath
-inputOpt = strOption (  short 'i' <> long "input" <> metavar "INPUT_FILE"
-                     <> help "The input file to process.")
+-- inputOpt :: Parser FilePath
+-- inputOpt = strOption (  short 'i' <> long "input" <> metavar "INPUT_FILE"
+--                      <> help "The input file to process.")
 
 -- inputsOpt :: Parser [FilePath]
 -- inputsOpt = many (strArgument (  metavar "INPUT_FILES ..."
                               -- <> help "Input data files."))
 
 defaultOpts :: Parser Actions
-defaultOpts = Default <$> outputOpt <*> inputOpt
+defaultOpts =   Login
+            <$> strOption (  short 'a' <> long "auth" <> metavar "AUTH_FILE"
+                          <> help "The file to put the authorization\
+                                  \ information info."
+                          )
+            <*> many (option auto
+                        (  metavar "SERVICE"
+                        <> help "A service to process for this action. One of\
+                                \ 'Twitter'."))
 
 opts' :: Parser Actions
 opts' = subparser
-      (  command "default" (info (helper <*> defaultOpts)
+      (  command "login" (info (helper <*> defaultOpts)
                           (progDesc "Default action and options."))
       )
 

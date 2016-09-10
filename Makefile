@@ -4,13 +4,8 @@ BUILD_FLAGS=--pedantic
 
 RUN=stack exec -- dialogue
 
-init: stack.yaml
-
-stack.yaml:
-	stack init --prefer-nightly
-
 run: build
-	$(RUN) --help
+	$(RUN) login --help
 
 docs:
 	stack haddock
@@ -58,7 +53,7 @@ bench:
 	stack bench $(BUILD_FLAGS)
 
 watch:
-	ghcid "--command=stack ghci"
+	stack build --file-watch --pedantic --fast --exec 'make run'
 
 watch-test:
 	stack test --file-watch --pedantic # --test-arguments "-m TODO"

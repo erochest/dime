@@ -1,11 +1,15 @@
 module Types where
 
 
--- import           Dialog.Types
+import           Dialog.Types
 
 
 data Actions
-        = Default { defaultOutput :: !FilePath
-                  , defaultInput  :: !FilePath
-                  }
-        deriving (Show, Eq)
+    = Login { loginAuthFile  :: !FilePath
+            , loginService   :: ![Service]
+            }
+    -- | Import
+    -- | Archive
+    -- | Download
+    -- | Export
+    deriving (Show, Eq)
