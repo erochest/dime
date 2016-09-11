@@ -19,7 +19,15 @@ library
   -- other-extensions:
   build-depends:       base >=4.8 && <4.9
                      , errors
+                     , exceptions
                      , lens
+                     , monad-control
+                     , monad-logger
+                     , mtl
+                     , placeholders
+                     , safe-exceptions
+                     , transformers
+                     , transformers-base
                      , text
                      , text-format
   hs-source-dirs:      src
