@@ -2,3 +2,5 @@
 Profile json
     name Text
     UniqueProfile name
+    deriving Show
+    deriving Eq
