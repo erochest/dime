@@ -24,11 +24,13 @@ import           Control.Monad.Logger
 import           Control.Monad.RWS.Strict
 import           Control.Monad.Trans.Control
 import           Control.Monad.Trans.Reader
+import           Data.ByteString             (ByteString)
 import           Data.Data
 import qualified Data.Text                   as T
 import           Data.Time
 import           Database.Persist.Sqlite
 import           GHC.Generics                hiding (to)
+import           Lucid                       (Html)
 
 import           Dialogue.Models
 
@@ -117,6 +119,26 @@ runDialogueL :: (Exception e, MonadBaseControl IO m, MonadIO m)
              => T.Text -> DialogueT e m a -> LoggingT (ExceptT e m) a
 runDialogueL sqliteFile d =
     LoggingT $ ExceptT . runLoggingT (runDialogueDB sqliteFile d)
+
+-- * MessageStream
+
+class MessageStream a b where
+    streamName :: a b -> T.Text
+    initStream :: Dialogue e (a b)
+    openStream :: Dialogue e (a b)
+    closeStream :: a b -> Dialogue e ()
+    getLastUpdatedDate :: a b -> Dialogue e UTCTime
+    getLastUpdatedID :: a b -> Dialogue e T.Text
+    getRecentMessages :: Traversable t => a b -> Dialogue e (t b)
+    retrieveMessages :: Traversable t => a b -> Dialogue e (t b)
+    migrateMessages :: a b -> Maybe (ByteString -> Dialogue e ())
+    insertMessage :: a b -> Maybe (Dialogue e ())
+
+    migrateMessages = const Nothing
+    insertMessage   = const Nothing
+
+class Publishable b where
+    toHTML :: b -> Html ()
 
 -- * Services
 

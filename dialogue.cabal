@@ -20,9 +20,11 @@ library
   -- other-extensions:
   build-depends:       base >=4.8 && <4.9
                      , aeson
+                     , bytestring
                      , errors
                      , exceptions
                      , lens
+                     , lucid
                      , monad-control
                      , monad-logger
                      , mtl
