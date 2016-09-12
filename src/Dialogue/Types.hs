@@ -3,6 +3,8 @@
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE FunctionalDependencies     #-}
+{-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE RankNTypes                 #-}
@@ -24,6 +26,7 @@ import           Control.Monad.Logger
 import           Control.Monad.RWS.Strict
 import           Control.Monad.Trans.Control
 import           Control.Monad.Trans.Reader
+import           Data.Bifunctor              (first)
 import           Data.ByteString             (ByteString)
 import           Data.Data
 import qualified Data.Text                   as T
@@ -120,25 +123,48 @@ runDialogueL :: (Exception e, MonadBaseControl IO m, MonadIO m)
 runDialogueL sqliteFile d =
     LoggingT $ ExceptT . runLoggingT (runDialogueDB sqliteFile d)
 
+runDialogueS :: Exception e => T.Text -> Dialogue e a -> ExceptT String IO a
+runDialogueS sqliteFile = ExceptT
+                        . fmap (first displayException)
+                        . runStderrLoggingT
+                        . runDialogueDB sqliteFile
+
 -- * MessageStream
 
-class MessageStream a b where
-    streamName :: a b -> T.Text
-    initStream :: Dialogue e (a b)
-    openStream :: Dialogue e (a b)
-    closeStream :: a b -> Dialogue e ()
-    getLastUpdatedDate :: a b -> Dialogue e UTCTime
-    getLastUpdatedID :: a b -> Dialogue e T.Text
-    getRecentMessages :: Traversable t => a b -> Dialogue e (t b)
-    retrieveMessages :: Traversable t => a b -> Dialogue e (t b)
-    migrateMessages :: a b -> Maybe (ByteString -> Dialogue e ())
-    insertMessage :: a b -> Maybe (Dialogue e ())
+class MessageStream a where
+    data El a :: *
+    streamName :: a -> T.Text
+    streamName' :: Proxy a -> T.Text
+
+    isActive :: a -> Bool
+    activate :: a -> Dialogue e ()
+    deactivate :: a -> Dialogue e ()
+
+    -- emptyStream :: a b
+    initStream :: Proxy a -> Dialogue e (Maybe a)
+    openStream :: Dialogue e a
+    closeStream :: a -> Dialogue e ()
+
+    getLastUpdatedDate :: a -> Dialogue e UTCTime
+    getLastUpdatedID :: a -> Dialogue e T.Text
+
+    getRecentMessages :: Traversable t => a -> Dialogue e (t b)
+    retrieveMessages :: Traversable t => a -> Dialogue e (t b)
+
+    migrateMessages :: a -> Maybe (ByteString -> Dialogue e ())
+    insertMessage :: a -> Maybe (Dialogue e ())
 
     migrateMessages = const Nothing
     insertMessage   = const Nothing
 
 class Publishable b where
     toHTML :: b -> Html ()
+
+data StreamList where
+    MkStreamList :: MessageStream ms => [ms] -> StreamList
+
+data ProxyStreamList where
+    MkProxyList :: MessageStream ms => [Proxy ms] -> ProxyStreamList
 
 -- * Services
 

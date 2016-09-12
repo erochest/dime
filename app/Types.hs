@@ -1,15 +1,12 @@
 module Types where
 
 
-import           Dialogue.Types
-
-
 data Actions
-    = Login { loginAuthFile  :: !FilePath
-            , loginService   :: ![Service]
-            }
-    -- | Import
+    = Init { initDbFile  :: !FilePath
+           }
+    -- | Journal
+    -- | Migrate
+    -- | Update
     -- | Archive
-    -- | Download
-    -- | Export
+    -- | Publish
     deriving (Show, Eq)

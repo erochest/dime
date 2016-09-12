@@ -14,20 +14,18 @@ import           Options.Applicative
 import           Types
 
 
+dbFileOpt :: Parser FilePath
+dbFileOpt = strOption (  short 'd' <> long "db-file" <> metavar "DB_FILENAME"
+                      <> value "dialogue.sqlite"
+                      <> help "The database file name. Defaults to\
+                              \ 'dialogue.sqlite'.")
+
 defaultOpts :: Parser Actions
-defaultOpts =   Login
-            <$> strOption (  short 'a' <> long "auth" <> metavar "AUTH_FILE"
-                          <> help "The file to put the authorization\
-                                  \ information info."
-                          )
-            <*> many (option auto
-                        (  metavar "SERVICE"
-                        <> help "A service to process for this action. One of\
-                                \ 'Twitter'."))
+defaultOpts = Init <$> dbFileOpt
 
 opts' :: Parser Actions
 opts' = subparser
-      (  command "login" (info (helper <*> defaultOpts)
+      (  command "init" (info (helper <*> defaultOpts)
                           (progDesc "Default action and options."))
       )
 

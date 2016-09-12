@@ -5,7 +5,7 @@ BUILD_FLAGS=--pedantic
 RUN=stack exec -- dialogue
 
 run: build
-	$(RUN) login --help
+	$(RUN) init --help
 
 docs:
 	stack haddock

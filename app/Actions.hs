@@ -8,11 +8,11 @@ module Actions where
 
 import           Control.Error
 
-import           Dialogue.Actions.Login
+import           Dialogue.Actions.Init
 
 import           Types
 
 
 action :: Actions -> Script ()
 
-action Login{..} = login loginAuthFile loginService
+action Init{..} = initialize initDbFile
