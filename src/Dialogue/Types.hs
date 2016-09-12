@@ -11,7 +11,7 @@
 {-# LANGUAGE UndecidableInstances       #-}
 
 
-module Dialog.Types where
+module Dialogue.Types where
 
 
 import           Control.Error

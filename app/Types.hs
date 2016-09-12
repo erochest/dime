@@ -1,7 +1,7 @@
 module Types where
 
 
-import           Dialog.Types
+import           Dialogue.Types
 
 
 data Actions

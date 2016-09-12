@@ -10,7 +10,7 @@
 {-# LANGUAGE TypeFamilies               #-}
 
 
-module Dialog.Models where
+module Dialogue.Models where
 
 
 import           Data.Text              (Text)

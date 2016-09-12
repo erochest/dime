@@ -8,7 +8,7 @@ module Actions where
 
 import           Control.Error
 
-import           Dialog.Actions.Login
+import           Dialogue.Actions.Login
 
 import           Types
 

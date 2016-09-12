@@ -13,9 +13,9 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 library
-  exposed-modules:     Dialog.Actions.Login
-                     , Dialog.Models
-                     , Dialog.Types
+  exposed-modules:     Dialogue.Actions.Login
+                     , Dialogue.Models
+                     , Dialogue.Types
   -- other-modules:
   -- other-extensions:
   build-depends:       base >=4.8 && <4.9

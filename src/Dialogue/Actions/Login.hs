@@ -1,12 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 
-module Dialog.Actions.Login where
+module Dialogue.Actions.Login where
 
 
 import           Control.Error
 
-import           Dialog.Types
+import           Dialogue.Types
 
 
 login :: FilePath -> [Service] -> Script ()
