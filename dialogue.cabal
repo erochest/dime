@@ -14,16 +14,21 @@ cabal-version:       >=1.10
 
 library
   exposed-modules:     Dialog.Actions.Login
+                     , Dialog.Models
                      , Dialog.Types
   -- other-modules:
   -- other-extensions:
   build-depends:       base >=4.8 && <4.9
+                     , aeson
                      , errors
                      , exceptions
                      , lens
                      , monad-control
                      , monad-logger
                      , mtl
+                     , persistent
+                     , persistent-sqlite
+                     , persistent-template
                      , placeholders
                      , safe-exceptions
                      , transformers

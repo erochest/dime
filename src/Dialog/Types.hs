@@ -1,10 +1,12 @@
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE RankNTypes                 #-}
+{-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UndecidableInstances       #-}
 
@@ -22,12 +24,19 @@ import           Control.Monad.Logger
 import           Control.Monad.RWS.Strict
 import           Control.Monad.Trans.Control
 import           Data.Data
+import qualified Data.Text                   as T
+import           Database.Persist.Sqlite
 import           GHC.Generics                hiding (to)
 
 
 -- * Application Monad
 
-data DialogueData = DialogueData
+data DialogueData
+    = DialogueData
+    { _ddSqlBackend :: !SqlBackend
+    } deriving (Typeable, Generic)
+$(makeLenses ''DialogueData)
+
 data DialogueState = DialogueState
 
 newtype DialogueT e m a
@@ -37,7 +46,7 @@ newtype DialogueT e m a
                            a }
     deriving ( Functor, Applicative, Monad, MonadIO, MonadLogger
              , MonadReader DialogueData, MonadState DialogueState
-             , Generic
+             , Typeable, Generic
              )
 
 type Dialogue e = DialogueT e IO
@@ -73,24 +82,26 @@ instance (Exception e, MonadBaseControl b m)
     liftBaseWith = defaultLiftBaseWith
     restoreM     = defaultRestoreM
 
-runDialogue :: Exception e => Dialogue e a -> IO a
-runDialogue d =
-    either (fail . displayException) return . fst
-        =<< runStderrLoggingT (evalRWST (runExceptT (unSay d))
-                                        DialogueData DialogueState)
+runDialogueDB :: (MonadBaseControl IO m, MonadIO m)
+              => T.Text -> DialogueT e m a -> LoggingT m (Either e a)
+runDialogueDB sqlFile d =
+    withSqliteConn sqlFile $ \sqlb ->
+        fst <$> evalRWST (runExceptT (unSay d)) (DialogueData sqlb) DialogueState
 
-runDialogueT :: MonadIO m => DialogueT e m a -> m (Either e a)
-runDialogueT d =   runStderrLoggingT
-               $   fst
-               <$> evalRWST (runExceptT (unSay d)) DialogueData DialogueState
+runDialogue :: Exception e => T.Text -> Dialogue e a -> IO a
+runDialogue sqliteFile d =
+    either (fail . displayException) return
+        =<< runStderrLoggingT (runDialogueDB sqliteFile d)
 
-runDialogueL :: (Exception e, Monad m)
-             => DialogueT e m a -> LoggingT (ExceptT e m) a
-runDialogueL d = LoggingT
-               $ ExceptT
-               . fmap fst
-               . runLoggingT
-               ( evalRWST (runExceptT (unSay d)) DialogueData DialogueState)
+runDialogueT :: (MonadBaseControl IO m, MonadIO m)
+             => T.Text -> DialogueT e m a -> m (Either e a)
+runDialogueT sqliteFile d =
+    runStderrLoggingT $ runDialogueDB sqliteFile d
+
+runDialogueL :: (Exception e, MonadBaseControl IO m, MonadIO m)
+             => T.Text -> DialogueT e m a -> LoggingT (ExceptT e m) a
+runDialogueL sqliteFile d =
+    LoggingT $ ExceptT . runLoggingT (runDialogueDB sqliteFile d)
 
 -- * Services
 
