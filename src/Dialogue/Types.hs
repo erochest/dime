@@ -23,10 +23,14 @@ import           Control.Monad.Except
 import           Control.Monad.Logger
 import           Control.Monad.RWS.Strict
 import           Control.Monad.Trans.Control
+import           Control.Monad.Trans.Reader
 import           Data.Data
 import qualified Data.Text                   as T
+import           Data.Time
 import           Database.Persist.Sqlite
 import           GHC.Generics                hiding (to)
+
+import           Dialogue.Models
 
 
 -- * Application Monad
@@ -35,7 +39,7 @@ data DialogueData
     = DialogueData
     { _ddSqlBackend :: !SqlBackend
     } deriving (Typeable, Generic)
-$(makeLenses ''DialogueData)
+$(makeClassy ''DialogueData)
 
 data DialogueState = DialogueState
 
@@ -82,11 +86,22 @@ instance (Exception e, MonadBaseControl b m)
     liftBaseWith = defaultLiftBaseWith
     restoreM     = defaultRestoreM
 
+liftSql :: Monad m => SqlPersistT (DialogueT e m) a -> DialogueT e m a
+liftSql sql = runReaderT sql =<< view ddSqlBackend
+
+liftE :: Monad m => ExceptT e m a -> DialogueT e m a
+liftE = DialogueT . ExceptT . lift . lift . runExceptT
+
+runDialogueDB' :: Monad m
+               => DialogueT e m a -> SqlBackend -> LoggingT m (Either e a)
+runDialogueDB' d sqlb =
+        fst <$> evalRWST (runExceptT (unSay d)) (DialogueData sqlb) DialogueState
+
 runDialogueDB :: (MonadBaseControl IO m, MonadIO m)
               => T.Text -> DialogueT e m a -> LoggingT m (Either e a)
 runDialogueDB sqlFile d =
-    withSqliteConn sqlFile $ \sqlb ->
-        fst <$> evalRWST (runExceptT (unSay d)) (DialogueData sqlb) DialogueState
+    withSqliteConn sqlFile $
+        runDialogueDB' (liftSql (runMigration migrateAll) >> d)
 
 runDialogue :: Exception e => T.Text -> Dialogue e a -> IO a
 runDialogue sqliteFile d =
