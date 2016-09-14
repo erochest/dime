@@ -11,7 +11,10 @@ init: build
 	$(RUN) init
 
 journal: build
-	$(RUN) journal --help
+	$(RUN) journal
+
+archivedb:
+	cp dialogue.sqlite tmp/dialogue.sqlite-`timestamp`
 
 docs:
 	stack haddock
@@ -69,5 +72,5 @@ restart: distclean build
 rebuild: clean build
 
 .PHONY: run docs configure install hlint clean distclean build test
-	bench watch watch-test restart rebuild
+	bench watch watch-test restart rebuild archivedb
 	init journal
