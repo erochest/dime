@@ -7,6 +7,7 @@
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
@@ -20,7 +21,6 @@ import           Control.Error
 import           Control.Exception.Safe
 import           Control.Lens
 import           Control.Monad.Base
-import qualified Control.Monad.Catch         as Catch
 import           Control.Monad.Except
 import           Control.Monad.Logger
 import           Control.Monad.RWS.Strict
@@ -30,6 +30,7 @@ import           Data.Bifunctor              (first)
 import           Data.ByteString             (ByteString)
 import           Data.Data
 import qualified Data.Text                   as T
+import qualified Data.Text.IO                as TIO
 import           Data.Time
 import           Database.Persist.Sqlite
 import           GHC.Generics                hiding (to)
@@ -60,11 +61,18 @@ newtype DialogueT e m a
 
 type Dialogue e = DialogueT e IO
 
+liftSql :: Monad m => SqlPersistT (DialogueT e m) a -> DialogueT e m a
+liftSql sql = runReaderT sql =<< view ddSqlBackend
+
+liftE :: Monad m => ExceptT e m a -> DialogueT e m a
+liftE = DialogueT . ExceptT . lift . lift . runExceptT
+
+hoistE :: (Exception e, Monad m) => Either e a -> DialogueT e m a
+hoistE (Right x) = return x
+hoistE (Left  x) = liftE $ throwE x
+
 instance MonadTrans (DialogueT e) where
     lift = DialogueT . lift . lift . lift
-
-instance (MonadThrow m, Exception e) => MonadThrow (DialogueT e m) where
-    throwM = DialogueT . Catch.throwM
 
 instance Exception e => MonadTransControl (DialogueT e) where
     type StT (DialogueT e) a = StT (RWST DialogueData () DialogueState) a
@@ -90,12 +98,6 @@ instance (Exception e, MonadBaseControl b m)
     type StM (DialogueT e m) a = ComposeSt (DialogueT e) m a
     liftBaseWith = defaultLiftBaseWith
     restoreM     = defaultRestoreM
-
-liftSql :: Monad m => SqlPersistT (DialogueT e m) a -> DialogueT e m a
-liftSql sql = runReaderT sql =<< view ddSqlBackend
-
-liftE :: Monad m => ExceptT e m a -> DialogueT e m a
-liftE = DialogueT . ExceptT . lift . lift . runExceptT
 
 runDialogueDB' :: Monad m
                => DialogueT e m a -> SqlBackend -> LoggingT m (Either e a)
@@ -128,6 +130,16 @@ runDialogueS sqliteFile = ExceptT
                         . fmap (first displayException)
                         . runStderrLoggingT
                         . runDialogueDB sqliteFile
+
+runDialogueS' :: T.Text -> Dialogue SomeException a -> Script a
+runDialogueS' = runDialogueS
+
+-- * Exceptions
+
+newtype ProfileException = ProfileException { unProfileException :: T.Text }
+                         deriving (Show, Eq, Data, Typeable, Generic)
+
+instance Exception ProfileException
 
 -- * MessageStream
 
@@ -177,3 +189,41 @@ data Service = Twitter
 
 data ExportFormat = ExportJSON | ExportEPUB
                   deriving (Eq, Show, Data, Typeable, Generic)
+
+-- * Inputs
+
+data TextInput
+    = FileInput !FilePath
+    | RawInput !T.Text
+    | StdInput
+    deriving (Show, Eq, Data, Typeable, Generic)
+$(makeClassyPrisms ''TextInput)
+
+-- * Promptable
+
+class Promptable p where
+    prompt :: Exception e => T.Text -> Dialogue e p
+    promptMaybe :: Exception e => T.Text -> Dialogue e (Maybe p)
+
+    promptMaybe = fmap Just . prompt
+
+instance Promptable T.Text where
+    prompt msg =  liftIO $ TIO.putStr (msg <> "? ")
+               >> T.strip <$> TIO.getLine
+
+instance Promptable Bool where
+    prompt msg = liftIO $ do
+        TIO.putStr (msg <> " [Y/n]? ")
+        reply <- T.toLower . T.strip <$> TIO.getLine
+        return $ case T.uncons reply of
+                    Nothing       -> True
+                    Just ('y', _) -> True
+                    Just _        -> False
+
+instance Promptable Profile where
+    prompt _msg =
+        Profile <$> prompt "name" <*> prompt "nickname" <*> prompt "primary"
+
+    promptMaybe msg = do
+        add <- prompt msg
+        if add then Just <$> prompt "" else return Nothing

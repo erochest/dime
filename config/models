@@ -1,6 +1,15 @@
 
 Profile json
     name Text
+    nickname Text
+    primary Bool
     UniqueProfile name
+    deriving Show
+    deriving Eq
+
+Journal json
+    sender ProfileId
+    date UTCTime
+    content Text
     deriving Show
     deriving Eq

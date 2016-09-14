@@ -14,9 +14,12 @@ cabal-version:       >=1.10
 
 library
   exposed-modules:     Dialogue.Actions.Init
+                     , Dialogue.Actions.Journal
                      , Dialogue.Models
                      , Dialogue.Streams
+                     , Dialogue.Streams.Journal
                      , Dialogue.Types
+                     , Dialogue.Utils
   -- other-modules:
   -- other-extensions:
   build-depends:       base >=4.8 && <4.9
@@ -51,6 +54,8 @@ executable dialogue
   build-depends:       base >=4.8 && <5
                      , dialogue
                      , errors
+                     , placeholders
+                     , time
                      , text
                      , optparse-applicative
                      , errors

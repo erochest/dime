@@ -14,6 +14,7 @@ module Dialogue.Models where
 
 
 import           Data.Text              (Text)
+import           Data.Time
 import           Database.Persist.Quasi
 import           Database.Persist.TH
 

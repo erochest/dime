@@ -1,7 +1,6 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE RankNTypes                #-}
-{-# LANGUAGE TemplateHaskell           #-}
 
 
 module Dialogue.Actions.Init where
@@ -12,20 +11,20 @@ import           Control.Exception.Safe
 import           Control.Monad.IO.Class
 import           Data.Monoid
 import           Data.Proxy
-import qualified Data.Text                as T
-import qualified Data.Text.IO             as TIO
+import qualified Data.Text              as T
+import qualified Data.Text.IO           as TIO
+import           Database.Persist
 
+import           Dialogue.Models
 import           Dialogue.Types
-
-import           Development.Placeholders
+import           Dialogue.Utils
 
 
 initialize :: FilePath -> Script ()
 initialize dbFile = runDialogueS' (T.pack dbFile) $
-    $(todo "Create a stream or two.")
-
-runDialogueS' :: T.Text -> Dialogue SomeException a -> Script a
-runDialogueS' = runDialogueS
+    liftSql . mapM_ insert
+        =<< (  unfoldM (promptMaybe "New profile")
+            :: Dialogue SomeException [Profile])
 
 init' :: (Exception e, MessageStream ms) => Proxy ms -> Dialogue e ()
 init' ps = do
