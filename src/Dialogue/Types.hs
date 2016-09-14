@@ -35,6 +35,7 @@ import           Data.Time
 import           Database.Persist.Sqlite
 import           GHC.Generics                hiding (to)
 import           Lucid                       (Html)
+import           System.IO                   (hFlush, stdout)
 
 import           Dialogue.Models
 
@@ -208,12 +209,14 @@ class Promptable p where
     promptMaybe = fmap Just . prompt
 
 instance Promptable T.Text where
-    prompt msg =  liftIO $ TIO.putStr (msg <> "? ")
+    prompt msg =  liftIO
+               $  TIO.putStr (msg <> "? ")
+               >> hFlush stdout
                >> T.strip <$> TIO.getLine
 
 instance Promptable Bool where
     prompt msg = liftIO $ do
-        TIO.putStr (msg <> " [Y/n]? ")
+        TIO.putStr (msg <> " [Y/n]? ") >> hFlush stdout
         reply <- T.toLower . T.strip <$> TIO.getLine
         return $ case T.uncons reply of
                     Nothing       -> True
