@@ -7,6 +7,12 @@ RUN=stack exec -- dialogue
 run: build
 	$(RUN) journal --help
 
+init: build
+	$(RUN) init
+
+journal: build
+	$(RUN) journal --help
+
 docs:
 	stack haddock
 	open `stack path --local-doc-root`/index.html
@@ -58,9 +64,10 @@ watch:
 watch-test:
 	stack test --file-watch --pedantic # --test-arguments "-m TODO"
 
-restart: distclean init build
+restart: distclean build
 
 rebuild: clean build
 
-.PHONY: init run docs configure install hlint clean distclean build test
-.PHONY: bench watch watch-test restart rebuild
+.PHONY: run docs configure install hlint clean distclean build test
+	bench watch watch-test restart rebuild
+	init journal
