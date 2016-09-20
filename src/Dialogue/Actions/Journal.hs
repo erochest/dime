@@ -14,6 +14,7 @@ import           Database.Persist
 
 import           Dialogue.Models
 import           Dialogue.Types
+import           Dialogue.Types.Dialogue
 import           Dialogue.Utils
 
 

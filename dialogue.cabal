@@ -15,33 +15,48 @@ cabal-version:       >=1.10
 library
   exposed-modules:     Dialogue.Actions.Init
                      , Dialogue.Actions.Journal
+                     , Dialogue.Actions.Migrate
+                     , Dialogue.Fields
+                     , Dialogue.Handles
                      , Dialogue.Models
                      , Dialogue.Streams
                      , Dialogue.Streams.Journal
+                     , Dialogue.Streams.Twitter
                      , Dialogue.Types
+                     , Dialogue.Types.Dialogue
                      , Dialogue.Utils
   -- other-modules:
   -- other-extensions:
   build-depends:       base >=4.8 && <4.9
                      , aeson
+                     , authenticate-oauth
+                     , bifunctors
                      , bytestring
                      , errors
                      , exceptions
+                     , groom
+                     , http-conduit
                      , lens
                      , lucid
                      , monad-control
                      , monad-logger
                      , mtl
+                     , open-browser
                      , persistent
                      , persistent-sqlite
                      , persistent-template
                      , placeholders
+                     , resourcet
                      , safe-exceptions
                      , time
                      , transformers
                      , transformers-base
                      , text
                      , text-format
+                     , twitter-conduit
+                     , twitter-types
+                     , twitter-types-lens
+                     , unordered-containers
   hs-source-dirs:      src
   default-language:    Haskell2010
 

@@ -1,6 +1,5 @@
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
--- {-# LANGUAGE TemplateHaskell   #-}
 
 
 module Opts
@@ -11,12 +10,13 @@ module Opts
     ) where
 
 
-import qualified Data.Text                as T
+import           Control.Monad
+import           Data.Char
+import qualified Data.Text           as T
 import           Data.Time
 import           Options.Applicative
 
--- import           Development.Placeholders
-
+import           Dialogue.Fields
 import           Dialogue.Types
 
 import           Types
@@ -51,16 +51,32 @@ inputOpt =   option (FileInput <$> str)
                     <> help "A raw message to use as the input text.")
          <|> pure StdInput
 
+inputFileOpt :: Parser FilePath
+inputFileOpt = strOption (  short 'i' <> long "input" <> metavar "FILENAME"
+                         <> help "A file name to read the input from.")
+
+serviceOpt :: Parser Service
+serviceOpt = option (parse . map toLower =<< str)
+                    (  short 's' <> long "service" <> metavar "SERVICE_NAME"
+                    <> help "The service to operate on. This is one of\
+                            \ 'journal' or 'twitter'.\
+                            \ You just need enough of this to be unique.")
+    where
+        parse :: MonadPlus m => String -> m Service
+        parse name | take 1 name == "j" = return JournalService
+                   | take 1 name == "t" = return TwitterService
+                   | otherwise          = mzero
+
 -- * Command parsers
 
 initOpts :: Parser Actions
 initOpts = Init <$> dbFileOpt
 
 journalOpts :: Parser Actions
-journalOpts =   Journal
-            <$> dbFileOpt
-            <*> optional dateOpt
-            <*> inputOpt
+journalOpts = Journal <$> dbFileOpt <*> optional dateOpt <*> inputOpt
+
+migrateOpts :: Parser Actions
+migrateOpts =   Migrate <$> dbFileOpt <*> inputFileOpt <*> serviceOpt
 
 -- * Bringing it all together
 
@@ -70,6 +86,9 @@ opts' = subparser
                             (progDesc "Default action and options."))
       <> command "journal" (info (helper <*> journalOpts)
                             (progDesc "Record a separate journal entry."))
+      <> command "migrate" (info (helper <*> migrateOpts)
+                            (progDesc "Import a data file from previous\
+                                      \ iterations of this program."))
       )
 
 opts :: ParserInfo Actions

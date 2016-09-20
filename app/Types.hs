@@ -3,6 +3,7 @@ module Types where
 
 import           Data.Time
 
+import           Dialogue.Fields
 import           Dialogue.Types
 
 
@@ -13,7 +14,10 @@ data Actions
               , journalDate   :: !(Maybe UTCTime)
               , journalInput  :: !TextInput
               }
-    -- | Migrate
+    | Migrate { migrateDbFile :: !FilePath
+              , migrateInput  :: !FilePath
+              , migrateStream :: !Service
+              }
     -- | Update
     -- | Archive
     -- | Publish

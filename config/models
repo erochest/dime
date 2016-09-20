@@ -7,9 +7,40 @@ Profile json
     deriving Show
     deriving Eq
 
+Handle json
+    handle Text
+    service Service
+    profileId ProfileId
+    deriving Show
+    deriving Eq
+
+ServiceInfo json
+    service Service
+    isActive Bool default=False
+    accessToken Text Maybe
+    accessSecret Text Maybe
+    lastUpdatedDate UTCTime Maybe
+    lastUpdatedId Text Maybe
+    UniqueService service
+    deriving Show
+    deriving Eq
+
 Journal json
     sender ProfileId
     date UTCTime
     content Text
+    deriving Show
+    deriving Eq
+
+TwitterMessage json
+    twitterId Int
+    createdAt UTCTime
+    senderScreenName Text
+    senderHandleId HandleId
+    recipientScreenName Text
+    recipientHandleId HandleId
+    content Text
+    raw Text
+    UniqueTwitterId twitterId
     deriving Show
     deriving Eq

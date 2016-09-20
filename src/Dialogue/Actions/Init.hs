@@ -1,39 +1,48 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE RankNTypes                #-}
+{-# LANGUAGE ScopedTypeVariables       #-}
 
 
 module Dialogue.Actions.Init where
 
 
 import           Control.Error
-import           Control.Exception.Safe
+import           Control.Monad
 import           Control.Monad.IO.Class
 import           Data.Monoid
 import           Data.Proxy
-import qualified Data.Text              as T
-import qualified Data.Text.IO           as TIO
+import qualified Data.Text                as T
+import qualified Data.Text.IO             as TIO
 import           Database.Persist
 
 import           Dialogue.Models
+import           Dialogue.Streams.Twitter
 import           Dialogue.Types
+import           Dialogue.Types.Dialogue
 import           Dialogue.Utils
 
 
 initialize :: FilePath -> Script ()
-initialize dbFile = runDialogueS' (T.pack dbFile) $
+initialize dbFile = runDialogueS' (T.pack dbFile) $ do
     liftSql . mapM_ insert
-        =<< (  unfoldM (promptMaybe "New profile")
-            :: Dialogue SomeException [Profile])
+        =<< (unfoldM (promptMaybe "New profile") :: Dialogue [Profile])
+    void $ init' (Proxy :: Proxy TwitterStream)
 
-init' :: (Exception e, MessageStream ms) => Proxy ms -> Dialogue e ()
+init' :: (Promptable ms, MessageStream ms mi) => Proxy ms -> Dialogue (Maybe ms)
 init' ps = do
-    let name = streamName' ps
+    a <- isActive' ps
+    if not a
+        then do
+            let name = streamName' ps
 
-    liftIO $ TIO.putStrLn name
-    s <- initStream ps
-    case s of
-        Just s' -> do
-            activate s'
-            liftIO . TIO.putStrLn $ name <> " activated."
-        Nothing -> liftIO . TIO.putStrLn $ name <> " not activated."
+            liftIO $ TIO.putStrLn name
+            s <- promptMaybe name
+            case s of
+                Just s' -> do
+                    void $ activate s'
+                    liftIO . TIO.putStrLn $ name <> " activated."
+                Nothing -> liftIO . TIO.putStrLn $ name <> " not activated."
+            return s
+        else
+            Just <$> openStream

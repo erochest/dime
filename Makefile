@@ -3,18 +3,25 @@
 BUILD_FLAGS=--pedantic
 
 RUN=stack exec -- dialogue
+DB=dialogue.sqlite
 
 run: build
 	$(RUN) journal --help
 
 init: build
-	$(RUN) init
+	$(RUN) init --db-file $(DB)
 
 journal: build
-	$(RUN) journal
+	$(RUN) journal --help
+
+migrate: build
+	$(RUN) migrate --db-file $(DB) --service twitter --input `make last-archive`
 
 archivedb:
 	cp dialogue.sqlite tmp/dialogue.sqlite-`timestamp`
+
+last-archive:
+	@ls -1 tmp/archive/*.json | tail -1
 
 docs:
 	stack haddock

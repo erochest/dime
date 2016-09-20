@@ -18,6 +18,8 @@ import           Data.Time
 import           Database.Persist.Quasi
 import           Database.Persist.TH
 
+import           Dialogue.Fields
+
 
 share [ mkPersist sqlSettings { mpsGenerateLenses = True }
       , mkMigrate "migrateAll"
