@@ -18,7 +18,9 @@ data Actions
               , migrateInput  :: !FilePath
               , migrateStream :: !Service
               }
-    -- | Update
+    | Update  { updateDbFile  :: !FilePath
+              , updateStream  :: !Service
+              }
     -- | Archive
     -- | Publish
     deriving (Show, Eq)

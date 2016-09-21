@@ -16,6 +16,7 @@ library
   exposed-modules:     Dialogue.Actions.Init
                      , Dialogue.Actions.Journal
                      , Dialogue.Actions.Migrate
+                     , Dialogue.Actions.Update
                      , Dialogue.Fields
                      , Dialogue.Handles
                      , Dialogue.Models

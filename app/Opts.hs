@@ -76,7 +76,10 @@ journalOpts :: Parser Actions
 journalOpts = Journal <$> dbFileOpt <*> optional dateOpt <*> inputOpt
 
 migrateOpts :: Parser Actions
-migrateOpts =   Migrate <$> dbFileOpt <*> inputFileOpt <*> serviceOpt
+migrateOpts = Migrate <$> dbFileOpt <*> inputFileOpt <*> serviceOpt
+
+updateOpts :: Parser Actions
+updateOpts = Update <$> dbFileOpt <*> serviceOpt
 
 -- * Bringing it all together
 
@@ -89,6 +92,9 @@ opts' = subparser
       <> command "migrate" (info (helper <*> migrateOpts)
                             (progDesc "Import a data file from previous\
                                       \ iterations of this program."))
+      <> command "update"  (info (helper <*> updateOpts)
+                            (progDesc "Update the database with new data \
+                                      \ downloaded from the stream."))
       )
 
 opts :: ParserInfo Actions

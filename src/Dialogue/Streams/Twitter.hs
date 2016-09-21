@@ -32,6 +32,8 @@ import qualified Data.HashMap.Strict            as M
 import           Data.Monoid
 import qualified Data.Text                      as T
 import           Data.Text.Encoding
+import           Data.Text.Format
+import qualified Data.Text.Format               as F
 import           Data.Time
 import           Database.Persist               hiding (count)
 import           GHC.Generics                   hiding (to)
@@ -100,13 +102,18 @@ toTM idx dm@DirectMessage{..} = do
 insertDMs :: M.HashMap T.Text HandleId
           -> [DirectMessage]
           -> Dialogue [Entity TwitterMessage]
-insertDMs idx =   liftSql
+insertDMs idx =   report
+              <=< liftSql
               .   fmap catMaybes
               .   mapM getEntity
               .   catMaybes
               <=< liftSql
               .   mapM insertUnique
               .   mapMaybe (toTM idx)
+    where
+        report xs = do
+            F.print "{} Direct Messages added.\n" $ Only (length xs)
+            return xs
 
 data TwitterStream
     = TwitterStream
@@ -251,6 +258,7 @@ walkHistory :: ( Monad m
             -> m (IdCursor, [a])
 walkHistory twInfo manager getId apireq (mMaxId, accum) = do
     throttle
+    F.print "Getting DMs from {} ({} so far).\n" (Shown mMaxId, length accum)
     res <- liftIO . call twInfo manager
         $  apireq & maxId .~ cursorDoneMaybe mMaxId
     case res of
@@ -269,9 +277,9 @@ downloadTwitterMessages ts = do
 
 getPIN :: String -> String -> ResourceT IO ByteString
 getPIN provider uri = liftIO $ do
-    putStrLn $ "Opening " ++ provider ++ ": <" ++ uri ++ ">"
+    F.print "Opening {}: <{}>\n" (provider, uri)
     void $ openBrowser uri
-    putStr $ "> what was the PIN " ++ provider ++ " provided? "
+    F.print "> what was the PIN {} provided?" $ Only provider
     hFlush stdout
     C8.getLine
 
@@ -281,15 +289,11 @@ loginTwitter = do
     manager <- liftIO $ newManager tlsManagerSettings
     let oauth = watch "oauth" $ oauth' { oauthCallback = Just "oob" }
     Credential cred <- liftIO . runResourceT $ do
-        traceM "AAA"
         cred <- getTemporaryCredential oauth manager
-        traceM "BBB"
         pin  <- getPIN "Twitter" $ authorizeUrl oauth cred
-        traceM "CCC"
         getAccessToken oauth (OAuth.insert "oauth_verifier" pin cred) manager
-            <* traceM "DDD"
-    liftE $ (,) <$> trace "EEE" ( luToken "oauth_token"        cred )
-                <*> trace "FFF" ( luToken "oauth_token_secret" cred )
+    liftE $ (,) <$> luToken "oauth_token"        cred
+                <*> luToken "oauth_token_secret" cred
     where
         luToken k xs =  Prelude.lookup (encodeUtf8 k) xs
                      ?? toException (TwitterException $ "Missing " <> k)

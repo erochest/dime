@@ -6,7 +6,7 @@ RUN=stack exec -- dialogue
 DB=dialogue.sqlite
 
 run: build
-	$(RUN) journal --help
+	$(RUN) update --help
 
 init: build
 	$(RUN) init --db-file $(DB)
@@ -16,6 +16,9 @@ journal: build
 
 migrate: build
 	$(RUN) migrate --db-file $(DB) --service twitter --input `make last-archive`
+
+update: build
+	$(RUN) update --db-file $(DB) --service twitter
 
 archivedb:
 	cp dialogue.sqlite tmp/dialogue.sqlite-`timestamp`
