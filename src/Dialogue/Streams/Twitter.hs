@@ -32,7 +32,6 @@ import qualified Data.HashMap.Strict            as M
 import           Data.Monoid
 import qualified Data.Text                      as T
 import           Data.Text.Encoding
-import           Data.Text.Read
 import           Data.Time
 import           Database.Persist               hiding (count)
 import           GHC.Generics                   hiding (to)
@@ -169,35 +168,17 @@ saveTwitter ts@(TwitterStream Nothing    (t, s)) = do
         . insert
         $ ServiceInfo TwitterService False
                       (Just (decodeUtf8 t)) (Just (decodeUtf8 s))
-                      Nothing Nothing
     return (k, ts & twitterServiceId .~ Just k)
 
-lastTwitterUpdate :: Lens' ServiceInfo (Maybe a) -> TwitterStream
-                  -> Dialogue (Maybe a)
-lastTwitterUpdate l ts =
-    fmap join $ sequenceA $ lastUpdate <$> ts ^. twitterServiceId
-    where
-        lastUpdate sid =   (view (to entityVal . l) =<<)
-                       <$> liftSql (selectFirst [ServiceInfoId ==. sid] [])
-
 lastTwitterUpdateDate :: TwitterStream -> Dialogue (Maybe UTCTime)
-lastTwitterUpdateDate = lastTwitterUpdate serviceInfoLastUpdatedDate
+lastTwitterUpdateDate _ =
+    liftSql $   fmap (_twitterMessageCreatedAt . entityVal)
+            <$> selectFirst [] [Desc TwitterMessageCreatedAt]
 
-lastTwitterUpdateID :: TwitterStream -> Dialogue (Maybe T.Text)
-lastTwitterUpdateID = lastTwitterUpdate serviceInfoLastUpdatedId
-
-setTwitterUpdate :: TwitterStream -> T.Text -> Maybe UTCTime
-                 -> Dialogue TwitterStream
-setTwitterUpdate ts@(TwitterStream (Just sid) _) updateId updateTime = do
-    now <- liftIO $ maybe getCurrentTime return updateTime
-    liftSql $ update sid [ ServiceInfoLastUpdatedDate =. Just now
-                         , ServiceInfoLastUpdatedId   =. Just updateId
-                         ]
-    return ts
-setTwitterUpdate ts@(TwitterStream Nothing _) updateId updateTime =
-    setUpdate updateId updateTime . snd =<< saveTwitter ts
-    where
-        setUpdate i t s = setTwitterUpdate s i t
+lastTwitterUpdateID :: TwitterStream -> Dialogue (Maybe Integer)
+lastTwitterUpdateID _ =
+    liftSql $   fmap (fromIntegral . _twitterMessageTwitterId . entityVal)
+            <$> selectFirst [] [Desc TwitterMessageTwitterId]
 
 getTwitterMessages :: Dialogue [Entity TwitterMessage]
 getTwitterMessages = liftSql $ selectList [] [Asc TwitterMessageCreatedAt]
@@ -280,11 +261,10 @@ walkHistory twInfo manager getId apireq (mMaxId, accum) = do
 throttle :: MonadIO m => m ()
 throttle = liftIO . threadDelay $ floor (60 * 1e6 :: Double)
 
-getRecentTwitterMessages :: TwitterStream -> Dialogue [Entity TwitterMessage]
-getRecentTwitterMessages ts = do
+downloadTwitterMessages :: TwitterStream -> Dialogue [Entity TwitterMessage]
+downloadTwitterMessages ts = do
     idx    <- indexHandles TwitterService
-    lastId <-  join . fmap (fmap fst . hush . decimal)
-           <$> lastTwitterUpdateID ts
+    lastId <- lastTwitterUpdateID ts
     insertDMs idx =<< downloadDMs ts lastId
 
 getPIN :: String -> String -> ResourceT IO ByteString

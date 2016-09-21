@@ -78,9 +78,8 @@ class MessageStream a item | a -> item where
 
     getLastUpdatedDate :: a -> Dialogue (Maybe UTCTime)
     getLastUpdatedID :: a -> Dialogue (Maybe T.Text)
-    updateStream :: a -> T.Text -> Dialogue a
 
-    getRecentMessages :: a -> Dialogue [Entity item]
+    downloadMessages :: a -> Dialogue [Entity item]
     retrieveMessages :: a -> Dialogue [Entity item]
 
     migrateMessages :: a -> Maybe (ByteString -> Dialogue ())
@@ -114,13 +113,10 @@ instance MessageStream TwitterStream TwitterMessage where
     getLastUpdatedDate = lastTwitterUpdateDate
 
     -- getLastUpdatedID :: a -> Dialogue e T.Text
-    getLastUpdatedID = lastTwitterUpdateID
-
-    -- updateStream :: a -> T.Text -> Dialogue a
-    updateStream ts uid = setTwitterUpdate ts uid Nothing
+    getLastUpdatedID = fmap (fmap (T.pack . show)) . lastTwitterUpdateID
 
     -- getRecentMessages :: a -> Dialogue e [b]
-    getRecentMessages = getRecentTwitterMessages
+    downloadMessages = downloadTwitterMessages
 
     -- retrieveMessages :: Traversable t => a -> Dialogue e (t b)
     retrieveMessages _ = getTwitterMessages

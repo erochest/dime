@@ -19,8 +19,6 @@ ServiceInfo json
     isActive Bool default=False
     accessToken Text Maybe
     accessSecret Text Maybe
-    lastUpdatedDate UTCTime Maybe
-    lastUpdatedId Text Maybe
     UniqueService service
     deriving Show
     deriving Eq
