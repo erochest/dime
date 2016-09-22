@@ -13,8 +13,9 @@ import qualified Data.Text              as T
 import qualified Data.Text.IO           as TIO
 
 import           Dialogue.Fields
-import           Dialogue.Types
 import           Dialogue.Types.Dialogue
+import           Dialogue.Streams
+import           Dialogue.Streams.Note
 import           Dialogue.Streams.Twitter
 
 
@@ -26,6 +27,7 @@ updateService :: FilePath -> Service -> Script ()
 updateService dbFile service = runDialogueS' (T.pack dbFile) $
     case service of
         TwitterService -> loadTwitter >>= update'
+        NoteService    -> loadNote    >>= update'
         JournalService -> liftIO $ TIO.putStrLn "Nothing to update with journal."
         -- s -> throwD . UpdateException $ "Invalid service: " <> T.pack (show s)
 

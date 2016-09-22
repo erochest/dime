@@ -22,6 +22,7 @@ library
                      , Dialogue.Models
                      , Dialogue.Streams
                      , Dialogue.Streams.Journal
+                     , Dialogue.Streams.Note
                      , Dialogue.Streams.Twitter
                      , Dialogue.Types
                      , Dialogue.Types.Dialogue
@@ -33,6 +34,8 @@ library
                      , authenticate-oauth
                      , bifunctors
                      , bytestring
+                     , directory
+                     , filepath
                      , errors
                      , exceptions
                      , groom
@@ -88,12 +91,13 @@ test-suite dialogue-specs
   ghc-options:         -threaded -rtsopts
   hs-source-dirs:      specs
   main-is:             Specs.hs
-  other-modules:         Dialog.TypesSpec
+  other-modules:         Dialogue.Stream.NoteSpec
   build-depends:         base
                        , dialogue
                        , errors
                        , lens
                        , text
+                       , time
                        , QuickCheck
                        , smallcheck
                        , hspec

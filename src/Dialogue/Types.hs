@@ -7,6 +7,7 @@
 {-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE KindSignatures             #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RankNTypes                 #-}
@@ -15,7 +16,6 @@
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UndecidableInstances       #-}
-{-# LANGUAGE KindSignatures #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 
@@ -26,18 +26,22 @@ import           Control.Exception.Safe
 import           Control.Lens
 import           Control.Monad.Except
 import           Control.Monad.RWS.Strict
-import           Data.ByteString          (ByteString)
+import           Data.Char                (isSpace)
 import           Data.Data
+import qualified Data.List                as L
 import qualified Data.Text                as T
 import qualified Data.Text.IO             as TIO
-import           Data.Time
 import           Database.Persist.Sqlite
 import           GHC.Generics             hiding (to)
 import           Lucid                    (Html)
+import           System.Directory
+import           System.FilePath
 import           System.IO                (hFlush, stdout)
 
 import           Dialogue.Fields
 import           Dialogue.Models
+import           Dialogue.Streams
+import           Dialogue.Streams.Note
 import           Dialogue.Streams.Twitter
 import           Dialogue.Types.Dialogue
 
@@ -56,73 +60,6 @@ instance Exception ServiceException
 
 -- * Streams
 
--- * MessageStream
-
--- TODO: It would be nice to relate the instance of Service that is associated
--- with each 'a' below. (I.e., use DataKinds to say that TwitterService is the
--- Service instance associated with TwitterStream.)
-class MessageStream a item | a -> item where
-    streamName :: a -> T.Text
-    streamName' :: Proxy a -> T.Text
-    streamService :: Proxy a -> Service
-    getStreamFromService :: Service -> Dialogue (Maybe a)
-    getStream :: Proxy a -> Dialogue (Maybe a)
-
-    isActive :: a -> Dialogue Bool
-    isActive' :: Proxy a -> Dialogue Bool
-    activate :: a -> Dialogue a
-    deactivate :: a -> Dialogue a
-
-    openStream :: Dialogue a
-    saveStream :: a -> Dialogue (Key ServiceInfo, a)
-
-    getLastUpdatedDate :: a -> Dialogue (Maybe UTCTime)
-    getLastUpdatedID :: a -> Dialogue (Maybe T.Text)
-
-    downloadMessages :: a -> Dialogue [Entity item]
-    retrieveMessages :: a -> Dialogue [Entity item]
-
-    migrateMessages :: a -> Maybe (ByteString -> Dialogue ())
-    insertMessage :: a -> Maybe (Dialogue ())
-
-    getStream       = getStreamFromService . streamService
-    migrateMessages = const Nothing
-    insertMessage   = const Nothing
-
-instance MessageStream TwitterStream TwitterMessage where
-    streamName    = const "Twitter"
-    streamName'   = const "Twitter"
-    streamService = const TwitterService
-
-    -- getStreamFromService :: Service -> Dialogue e (Maybe a)
-    getStreamFromService TwitterService = Just <$> openStream
-    getStreamFromService _ = return Nothing
-
-    isActive   _  = twitterIsActive
-    isActive'  _  = twitterIsActive
-    activate   ts = setTwitterActive ts True
-    deactivate ts = setTwitterActive ts False
-
-    -- openStream :: Dialogue e a
-    openStream = loadTwitter
-
-    -- closeStream :: a -> Dialogue e ServiceInfoId
-    saveStream = saveTwitter
-
-    -- getLastUpdatedDate :: a -> Dialogue e UTCTime
-    getLastUpdatedDate = lastTwitterUpdateDate
-
-    -- getLastUpdatedID :: a -> Dialogue e T.Text
-    getLastUpdatedID = fmap (fmap (T.pack . show)) . lastTwitterUpdateID
-
-    -- getRecentMessages :: a -> Dialogue e [b]
-    downloadMessages = downloadTwitterMessages
-
-    -- retrieveMessages :: Traversable t => a -> Dialogue e (t b)
-    retrieveMessages _ = getTwitterMessages
-
-    -- migrateMessages :: a -> Maybe (ByteString -> Dialogue e ())
-    migrateMessages _ = Just $ void . migrateDirectMessages
 
 class Publishable b where
     toHTML :: b -> Html ()
@@ -168,6 +105,15 @@ instance Promptable T.Text where
 
     promptMaybe = checkPrompt
 
+instance Promptable String where
+    prompt msg =   liftIO
+               $   TIO.putStr (msg <> "? ")
+               >>  hFlush stdout
+               >>  L.dropWhile isSpace . L.dropWhileEnd isSpace
+               <$> getLine
+
+    promptMaybe = checkPrompt
+
 instance Promptable Bool where
     prompt msg = liftIO $ do
         TIO.putStr (msg <> " [Y/n]? ") >> hFlush stdout
@@ -196,5 +142,21 @@ instance Promptable TwitterStream where
                 Nothing -> return ()
 
         return $ TwitterStream Nothing (token, secret)
+
+    promptMaybe = checkPrompt
+
+instance Promptable NoteStream where
+    prompt msg = do
+        liftIO $ TIO.putStrLn msg
+        defDir <- (</> "Dropbox" </> "DO Note") <$> liftIO getHomeDirectory
+        exists <- liftIO $ doesDirectoryExist defDir
+        useDef <- if exists
+            then prompt $  "Use the default directory ("
+                        <> T.pack defDir <> ")"
+            else return False
+        noteDir <- if useDef
+            then return defDir
+            else prompt "Note directory"
+        return $ NoteStream Nothing noteDir
 
     promptMaybe = checkPrompt

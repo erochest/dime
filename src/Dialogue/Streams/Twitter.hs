@@ -81,13 +81,6 @@ getEntity :: forall record (m :: * -> *)
           -> ReaderT (PersistEntityBackend record) m (Maybe (Entity record))
 getEntity k = fmap (Entity k) <$> get k
 
-insertUniqueEntities :: ( MonadIO m
-                        , PersistEntityBackend val ~ backend
-                        , PersistEntity val
-                        )
-                     => [val] -> ReaderT backend m [Entity val]
-insertUniqueEntities = undefined
-
 toTM :: M.HashMap T.Text HandleId -> DirectMessage
      -> Maybe TwitterMessage
 toTM idx dm@DirectMessage{..} = do
@@ -121,6 +114,7 @@ data TwitterStream
     , _twitterAccess    :: !(ByteString, ByteString)
     } deriving (Show, Eq, Typeable, Generic)
 $(makeClassy ''TwitterStream)
+$(makeFields ''TwitterStream)
 
 data IdCursor
     = NotStarted
@@ -135,18 +129,6 @@ cursorDoneMaybe _          = Nothing
 isCursorDone :: IdCursor -> Bool
 isCursorDone CursorDone = True
 isCursorDone _          = False
-
-twitterIsActive :: Dialogue Bool
-twitterIsActive =   maybe False (_serviceInfoIsActive . entityVal)
-                <$> liftSql
-                (   selectFirst [ServiceInfoService ==. TwitterService] [])
-
-setTwitterActive :: TwitterStream -> Bool -> Dialogue TwitterStream
-setTwitterActive ts@(TwitterStream (Just sid) _) a = do
-    liftSql $ update sid [ServiceInfoIsActive =. a]
-    return ts
-setTwitterActive ts@(TwitterStream Nothing _) a =
-    (`setTwitterActive` a) . snd =<< saveTwitter ts
 
 loadTwitter :: Dialogue TwitterStream
 loadTwitter = do
@@ -177,13 +159,13 @@ saveTwitter ts@(TwitterStream Nothing    (t, s)) = do
                       (Just (decodeUtf8 t)) (Just (decodeUtf8 s))
     return (k, ts & twitterServiceId .~ Just k)
 
-lastTwitterUpdateDate :: TwitterStream -> Dialogue (Maybe UTCTime)
-lastTwitterUpdateDate _ =
+lastTwitterUpdateDate :: Dialogue (Maybe UTCTime)
+lastTwitterUpdateDate =
     liftSql $   fmap (_twitterMessageCreatedAt . entityVal)
             <$> selectFirst [] [Desc TwitterMessageCreatedAt]
 
-lastTwitterUpdateID :: TwitterStream -> Dialogue (Maybe Integer)
-lastTwitterUpdateID _ =
+lastTwitterUpdateID :: Dialogue (Maybe Integer)
+lastTwitterUpdateID =
     liftSql $   fmap (fromIntegral . _twitterMessageTwitterId . entityVal)
             <$> selectFirst [] [Desc TwitterMessageTwitterId]
 
@@ -272,7 +254,7 @@ throttle = liftIO . threadDelay $ floor (60 * 1e6 :: Double)
 downloadTwitterMessages :: TwitterStream -> Dialogue [Entity TwitterMessage]
 downloadTwitterMessages ts = do
     idx    <- indexHandles TwitterService
-    lastId <- lastTwitterUpdateID ts
+    lastId <- lastTwitterUpdateID
     insertDMs idx =<< downloadDMs ts lastId
 
 getPIN :: String -> String -> ResourceT IO ByteString

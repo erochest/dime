@@ -42,3 +42,12 @@ TwitterMessage json
     UniqueTwitterId twitterId
     deriving Show
     deriving Eq
+
+NoteMessage json
+    filePath FilePath
+    createdAt UTCTime
+    content Text
+    raw Text
+    UniqueFilePath filePath
+    deriving Show
+    deriving Eq

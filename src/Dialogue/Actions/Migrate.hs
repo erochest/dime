@@ -14,8 +14,8 @@ import qualified Data.Text                as T
 import qualified Data.Text.IO             as TIO
 
 import           Dialogue.Fields
+import           Dialogue.Streams
 import           Dialogue.Streams.Twitter
-import           Dialogue.Types
 import           Dialogue.Types.Dialogue
 
 
