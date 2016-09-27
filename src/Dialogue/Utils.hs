@@ -1,18 +1,21 @@
+{-# LANGUAGE GADTs #-}
+
+
 module Dialogue.Utils where
 
 
-import qualified Data.Text      as T
-import qualified Data.Text.IO   as TIO
+import           Control.Monad.IO.Class
+import           Control.Monad.Trans.Reader
+import           Data.Bifunctor
+import           Data.Foldable
+import           Data.Monoid
+import qualified Data.Sequence              as S
+import           Database.Persist
 import           Debug.Trace
+import           System.Directory
+import           System.FilePath
 import           Text.Groom
 
-import           Dialogue.Types
-
-
-readInput :: TextInput -> IO T.Text
-readInput (FileInput filename) = TIO.readFile filename
-readInput (RawInput  msg)      = return msg
-readInput StdInput             = TIO.getContents
 
 unfoldM :: Monad m => m (Maybe a) -> m [a]
 unfoldM m = do
@@ -36,3 +39,41 @@ watchFM msg f x = do
 
 watchF :: Show b => String -> (a -> b) -> a -> a
 watchF msg f x = trace (msg ++ groom (f x)) x
+
+ifMaybe :: Bool -> x -> Maybe x
+ifMaybe True  x = Just x
+ifMaybe False _ = Nothing
+
+(...) :: (c -> d) -> (a -> b -> c) -> a -> b -> d
+(...) = (.) . (.)
+
+over2 :: (Applicative f, Traversable (p c), Bifunctor p)
+      => (b -> f a) -> p c b -> f (p c a)
+over2 = sequenceA ... second
+
+listDirectory :: MonadIO m => FilePath -> m [FilePath]
+listDirectory dirname =   fmap (dirname </>)
+                      .   filter ((/= ".") . take 1)
+                      <$> liftIO (getDirectoryContents dirname)
+
+partitionM :: Monad m => (a -> m Bool) -> [a] -> m ([a], [a])
+partitionM p (x:xs) = do
+    (ts, fs) <- partitionM p xs
+    r <- p x
+    return $ if r then (x:ts, fs) else (ts, x:fs)
+partitionM _ [] = return ([], [])
+
+walkDirectory :: MonadIO m => FilePath -> m [FilePath]
+walkDirectory dirname = toList <$> go dirname
+    where
+        go dn = do
+            (dirs, files) <-  partitionM (liftIO . doesDirectoryExist)
+                          =<< listDirectory dn
+            (S.fromList files <>) . mconcat <$> mapM go dirs
+
+insertUniqueEntity :: ( MonadIO m
+                      , PersistEntityBackend val ~ backend
+                      , PersistUnique backend
+                      , PersistEntity val)
+                   => val -> ReaderT backend m (Maybe (Entity val))
+insertUniqueEntity v = fmap (`Entity` v) <$> insertUnique v

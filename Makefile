@@ -17,7 +17,10 @@ journal: build
 migrate: build
 	$(RUN) migrate --db-file $(DB) --service twitter --input `make last-archive`
 
-update: build twitter note
+update: build adium note twitter
+
+adium: build
+	$(RUN) update --db-file $(DB) --service adium
 
 note: build
 	$(RUN) update --db-file $(DB) --service note

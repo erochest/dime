@@ -18,6 +18,7 @@ import           Database.Persist
 
 import           Dialogue.Fields
 import           Dialogue.Models
+import           Dialogue.Streams.Adium
 import           Dialogue.Streams.Note
 import           Dialogue.Streams.Twitter
 import           Dialogue.Types.Dialogue
@@ -59,23 +60,23 @@ class MessageStream a item | a -> item where
     migrateMessages = const Nothing
     insertMessage   = const Nothing
 
-instance MessageStream TwitterStream TwitterMessage where
-    streamName    = const "Twitter"
-    streamName'   = const "Twitter"
-    streamService = const TwitterService
+instance MessageStream AdiumStream AdiumMessage where
+    streamName    = const "Adium"
+    streamName'   = const "Adium"
+    streamService = const AdiumService
+    getStreamFromService AdiumService = Just <$> openStream
+    getStreamFromService _            = return Nothing
 
-    getStreamFromService TwitterService = Just <$> openStream
-    getStreamFromService _ = return Nothing
+    isActive = const $ serviceIsActive AdiumService
 
-    isActive = const (serviceIsActive TwitterService)
+    openStream = loadAdium
+    saveStream = saveAdium
 
-    openStream = loadTwitter
-    saveStream = saveTwitter
-    getLastUpdatedDate = const lastTwitterUpdateDate
-    getLastUpdatedID   = const $ fmap (T.pack . show) <$> lastTwitterUpdateID
-    downloadMessages = downloadTwitterMessages
-    retrieveMessages = const getTwitterMessages
-    migrateMessages  = const $ Just $ void . migrateDirectMessages
+    getLastUpdatedDate = const lastAdiumUpdateDate
+    getLastUpdatedID   = const lastAdiumUpdateID
+
+    downloadMessages = getNewAdiumMessages
+    retrieveMessages = const loadAdiumMessages
 
 instance MessageStream NoteStream NoteMessage where
     streamName  = const "Note"
@@ -95,14 +96,35 @@ instance MessageStream NoteStream NoteMessage where
     downloadMessages = loadNoteDirectory
     retrieveMessages = const loadNoteMessages
 
+instance MessageStream TwitterStream TwitterMessage where
+    streamName    = const "Twitter"
+    streamName'   = const "Twitter"
+    streamService = const TwitterService
+
+    getStreamFromService TwitterService = Just <$> openStream
+    getStreamFromService _ = return Nothing
+
+    isActive = const (serviceIsActive TwitterService)
+
+    openStream = loadTwitter
+    saveStream = saveTwitter
+    getLastUpdatedDate = const lastTwitterUpdateDate
+    getLastUpdatedID   = const $ fmap (T.pack . show) <$> lastTwitterUpdateID
+    downloadMessages = downloadTwitterMessages
+    retrieveMessages = const getTwitterMessages
+    migrateMessages  = const $ Just $ void . migrateDirectMessages
+
 class HasServiceId a where
     serviceId :: Lens' a (Maybe ServiceInfoId)
 
-instance HasServiceId TwitterStream where
-    serviceId = twitterServiceId
+instance HasServiceId AdiumStream where
+    serviceId = adiumServiceId
 
 instance HasServiceId NoteStream where
     serviceId = noteServiceId
+
+instance HasServiceId TwitterStream where
+    serviceId = twitterServiceId
 
 serviceIsActive :: Service -> Dialogue Bool
 serviceIsActive s =

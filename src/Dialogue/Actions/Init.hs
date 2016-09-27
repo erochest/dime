@@ -18,6 +18,7 @@ import           Database.Persist
 
 import           Dialogue.Models
 import           Dialogue.Streams
+import           Dialogue.Streams.Adium
 import           Dialogue.Streams.Note
 import           Dialogue.Streams.Twitter
 import           Dialogue.Types
@@ -29,6 +30,7 @@ initialize :: FilePath -> Script ()
 initialize dbFile = runDialogueS' (T.pack dbFile) $ do
     liftSql . mapM_ insert
         =<< (unfoldM (promptMaybe "New profile") :: Dialogue [Profile])
+    void $ init' (Proxy :: Proxy AdiumStream)
     void $ init' (Proxy :: Proxy NoteStream)
     void $ init' (Proxy :: Proxy TwitterStream)
 

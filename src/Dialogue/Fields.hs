@@ -18,20 +18,22 @@ import           GHC.Generics
 
 data Service = TwitterService
              -- | Google
-             -- | IRC
+             | AdiumService
              | NoteService
              | JournalService
              deriving (Eq, Show, Read, Data, Typeable, Generic)
 
 instance ToJSON Service where
-    toJSON TwitterService = String "twitter"
-    toJSON NoteService    = String "note"
+    toJSON AdiumService   = String "adium"
     toJSON JournalService = String "journal"
+    toJSON NoteService    = String "note"
+    toJSON TwitterService = String "twitter"
 
 instance FromJSON Service where
-    parseJSON (String "twitter") = pure TwitterService
-    parseJSON (String "note"   ) = pure NoteService
+    parseJSON (String "adium"  ) = pure AdiumService
     parseJSON (String "journal") = pure JournalService
+    parseJSON (String "note"   ) = pure NoteService
+    parseJSON (String "twitter") = pure TwitterService
     parseJSON _                  = mzero
 
 derivePersistFieldJSON "Service"

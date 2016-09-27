@@ -23,10 +23,29 @@ ServiceInfo json
     deriving Show
     deriving Eq
 
+AdiumMessage json
+    adiumId Text
+    createdAt UTCTime
+    senderHandleId HandleId
+    recipientHandleId HandleId
+    content Text
+    UniqueAdiumId adiumId
+    deriving Show
+    deriving Eq
+
 Journal json
     sender ProfileId
     date UTCTime
     content Text
+    deriving Show
+    deriving Eq
+
+NoteMessage json
+    filePath FilePath
+    createdAt UTCTime
+    content Text
+    raw Text
+    UniqueFilePath filePath
     deriving Show
     deriving Eq
 
@@ -40,14 +59,5 @@ TwitterMessage json
     content Text
     raw Text
     UniqueTwitterId twitterId
-    deriving Show
-    deriving Eq
-
-NoteMessage json
-    filePath FilePath
-    createdAt UTCTime
-    content Text
-    raw Text
-    UniqueFilePath filePath
     deriving Show
     deriving Eq

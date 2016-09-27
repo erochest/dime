@@ -29,6 +29,7 @@ import           System.FilePath
 import           Dialogue.Fields
 import           Dialogue.Models
 import           Dialogue.Types.Dialogue
+import           Dialogue.Utils
 
 
 newtype NoteException = NoteException { unNoteException :: T.Text }
@@ -59,7 +60,9 @@ loadNote =   hoistM ex . fmap entNote
                              $ _serviceInfoAccessToken v
 
 saveNote :: NoteStream -> Dialogue (ServiceInfoId, NoteStream)
-saveNote ns@(NoteStream (Just sid) _ ) = return (sid, ns)
+saveNote ns@(NoteStream (Just sid) n ) = do
+    liftSql $ update sid [ ServiceInfoAccessToken =. Just (T.pack n) ]
+    return (sid, ns)
 saveNote ns@(NoteStream Nothing    fp) =
     fmap (id &&& (flip (set noteServiceId) ns . Just))
         . liftSql
@@ -83,12 +86,7 @@ loadNoteDirectory (NoteStream _ dirname) = do
              .   filter ((/= ".") . take 1)
              =<< liftIO
              (   getDirectoryContents dirname)
-    ents <- fmap ( fmap (uncurry Entity . swap)
-                 . mapMaybe sequenceA
-                 . zip messages
-                 )
-         .  liftSql
-         $  mapM insertUnique messages
+    ents <- liftSql $ catMaybes <$> mapM insertUniqueEntity messages
     liftIO $ mapM_ ( removeFile
                    . (dirname </>)
                    . _noteMessageFilePath

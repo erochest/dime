@@ -52,9 +52,7 @@ import           Dialogue.Fields
 import           Dialogue.Handles
 import           Dialogue.Models
 import           Dialogue.Types.Dialogue
-
-import           Debug.Trace
-import           Text.Groom
+import           Dialogue.Utils
 
 
 newtype TwitterException = TwitterException { unTwitterException :: T.Text }
@@ -96,12 +94,9 @@ insertDMs :: M.HashMap T.Text HandleId
           -> [DirectMessage]
           -> Dialogue [Entity TwitterMessage]
 insertDMs idx =   report
-              <=< liftSql
-              .   fmap catMaybes
-              .   mapM getEntity
               .   catMaybes
               <=< liftSql
-              .   mapM insertUnique
+              .   mapM insertUniqueEntity
               .   mapMaybe (toTM idx)
     where
         report xs = do
@@ -181,11 +176,7 @@ migrateDirectMessages input = do
 migrateTwitterMessages :: ByteString -> Dialogue [Entity TwitterMessage]
 migrateTwitterMessages input = do
     ms :: [TwitterMessage] <- decodeJSON input
-    liftSql
-        $   fmap catMaybes
-        .   mapM getEntity
-        .   catMaybes
-        =<< mapM insertUnique ms
+    liftSql $ catMaybes <$> mapM insertUniqueEntity ms
 
 twitterOAuth' :: Dialogue OAuth
 twitterOAuth' = do
@@ -269,7 +260,7 @@ loginTwitter :: Dialogue (ByteString, ByteString)
 loginTwitter = do
     oauth'  <- twitterOAuth'
     manager <- liftIO $ newManager tlsManagerSettings
-    let oauth = watch "oauth" $ oauth' { oauthCallback = Just "oob" }
+    let oauth = oauth' { oauthCallback = Just "oob" }
     Credential cred <- liftIO . runResourceT $ do
         cred <- getTemporaryCredential oauth manager
         pin  <- getPIN "Twitter" $ authorizeUrl oauth cred
@@ -279,6 +270,3 @@ loginTwitter = do
     where
         luToken k xs =  Prelude.lookup (encodeUtf8 k) xs
                      ?? toException (TwitterException $ "Missing " <> k)
-
-watch :: Show a => String -> a -> a
-watch msg x = trace (msg ++ groom x) x
