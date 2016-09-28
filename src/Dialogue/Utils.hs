@@ -1,20 +1,31 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GADTs             #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 
 module Dialogue.Utils where
 
 
+import           Control.Monad
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Reader
+import           Control.Monad.Trans.Resource
 import           Data.Bifunctor
+import           Data.ByteString              (ByteString)
+import qualified Data.ByteString.Char8        as C8
 import           Data.Foldable
 import           Data.Monoid
-import qualified Data.Sequence              as S
+import qualified Data.Sequence                as S
+import qualified Data.Text                    as T
+import           Data.Text.Format
+import qualified Data.Text.Format             as F
+import           Data.Text.Read
 import           Database.Persist
 import           Debug.Trace
 import           System.Directory
 import           System.FilePath
+import           System.IO
 import           Text.Groom
+import           Web.Browser
 
 
 unfoldM :: Monad m => m (Maybe a) -> m [a]
@@ -77,3 +88,18 @@ insertUniqueEntity :: ( MonadIO m
                       , PersistEntity val)
                    => val -> ReaderT backend m (Maybe (Entity val))
 insertUniqueEntity v = fmap (`Entity` v) <$> insertUnique v
+
+getPIN :: String -> String -> ResourceT IO ByteString
+getPIN provider uri = liftIO $ do
+    F.print "Opening {}: <{}>\n" (provider, uri)
+    void $ openBrowser uri
+    F.print "> what was the PIN {} provided?" $ Only provider
+    hFlush stdout
+    C8.getLine
+
+decimalE :: Integral a => T.Text -> Either String a
+decimalE t = do
+    (x, r) <- decimal t
+    if T.null r
+        then Left "Trailing text while parsing a number."
+        else Right x

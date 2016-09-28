@@ -9,7 +9,6 @@ module Dialogue.Streams where
 
 
 import           Control.Lens
-import           Control.Monad            (void)
 import           Data.ByteString          (ByteString)
 import           Data.Proxy
 import qualified Data.Text                as T
@@ -19,6 +18,7 @@ import           Database.Persist
 import           Dialogue.Fields
 import           Dialogue.Models
 import           Dialogue.Streams.Adium
+import           Dialogue.Streams.Google
 import           Dialogue.Streams.Note
 import           Dialogue.Streams.Twitter
 import           Dialogue.Types.Dialogue
@@ -78,6 +78,24 @@ instance MessageStream AdiumStream AdiumMessage where
     downloadMessages = getNewAdiumMessages
     retrieveMessages = const loadAdiumMessages
 
+instance MessageStream GoogleStream GoogleMessage where
+    streamName    = const "Google"
+    streamName'   = const "Google"
+    streamService = const GoogleService
+    getStreamFromService GoogleService = Just <$> openStream
+    getStreamFromService _             = pure Nothing
+
+    isActive = const $ serviceIsActive GoogleService
+
+    openStream = loadGoogle
+    saveStream = saveGoogle
+
+    getLastUpdatedDate = const lastGoogleUpdateDate
+    getLastUpdatedID   = const lastGoogleUpdateID
+
+    downloadMessages = downloadGoogleMessages
+    retrieveMessages = const getGoogleMessages
+
 instance MessageStream NoteStream NoteMessage where
     streamName  = const "Note"
     streamName' = const "Note"
@@ -112,13 +130,16 @@ instance MessageStream TwitterStream TwitterMessage where
     getLastUpdatedID   = const $ fmap (T.pack . show) <$> lastTwitterUpdateID
     downloadMessages = downloadTwitterMessages
     retrieveMessages = const getTwitterMessages
-    migrateMessages  = const $ Just $ void . migrateDirectMessages
+
 
 class HasServiceId a where
     serviceId :: Lens' a (Maybe ServiceInfoId)
 
 instance HasServiceId AdiumStream where
     serviceId = adiumServiceId
+
+instance HasServiceId GoogleStream where
+    serviceId = googleServiceId
 
 instance HasServiceId NoteStream where
     serviceId = noteServiceId

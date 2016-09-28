@@ -33,6 +33,17 @@ AdiumMessage json
     deriving Show
     deriving Eq
 
+GoogleMessage json
+    googleId Text
+    createdAt UTCTime
+    senderId HandleId
+    recipientId HandleId
+    content Text
+    raw Text
+    UniqueGoogleId googleId
+    deriving Show
+    deriving Eq
+
 Journal json
     sender ProfileId
     date UTCTime

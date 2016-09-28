@@ -17,7 +17,7 @@ import           GHC.Generics
 
 
 data Service = TwitterService
-             -- | Google
+             | GoogleService
              | AdiumService
              | NoteService
              | JournalService
@@ -25,12 +25,14 @@ data Service = TwitterService
 
 instance ToJSON Service where
     toJSON AdiumService   = String "adium"
+    toJSON GoogleService  = String "google"
     toJSON JournalService = String "journal"
     toJSON NoteService    = String "note"
     toJSON TwitterService = String "twitter"
 
 instance FromJSON Service where
     parseJSON (String "adium"  ) = pure AdiumService
+    parseJSON (String "google")  = pure GoogleService
     parseJSON (String "journal") = pure JournalService
     parseJSON (String "note"   ) = pure NoteService
     parseJSON (String "twitter") = pure TwitterService

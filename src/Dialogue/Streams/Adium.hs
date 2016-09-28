@@ -38,8 +38,6 @@ import           Dialogue.Types.Dialogue
 import           Dialogue.Utils
 
 
-type HandleIndex = M.HashMap T.Text HandleId
-
 newtype AdiumException = AdiumException { unAdiumException :: T.Text }
                        deriving (Show, Eq, Data, Typeable, Generic)
 

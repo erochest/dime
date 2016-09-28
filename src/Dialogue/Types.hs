@@ -42,6 +42,7 @@ import           Dialogue.Fields
 import           Dialogue.Models
 import           Dialogue.Streams
 import           Dialogue.Streams.Adium
+import           Dialogue.Streams.Google
 import           Dialogue.Streams.Note
 import           Dialogue.Streams.Twitter
 import           Dialogue.Types.Dialogue
@@ -60,7 +61,6 @@ newtype ServiceException = ServiceException { unServiceException :: T.Text }
 instance Exception ServiceException
 
 -- * Streams
-
 
 class Publishable b where
     toHTML :: b -> Html ()
@@ -170,5 +170,14 @@ instance Promptable TwitterStream where
         (token, secret) <- loginTwitter
         profilesFor TwitterService
         return $ TwitterStream Nothing (token, secret)
+
+    promptMaybe = checkPrompt
+
+instance Promptable GoogleStream where
+    prompt msg = do
+        liftIO $ TIO.putStrLn msg
+        token <- loginGoogle
+        profilesFor GoogleService
+        return $ GoogleStream Nothing token
 
     promptMaybe = checkPrompt

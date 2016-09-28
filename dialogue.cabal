@@ -22,6 +22,7 @@ library
                      , Dialogue.Models
                      , Dialogue.Streams
                      , Dialogue.Streams.Adium
+                     , Dialogue.Streams.Google
                      , Dialogue.Streams.Journal
                      , Dialogue.Streams.Note
                      , Dialogue.Streams.Twitter
@@ -32,6 +33,7 @@ library
   -- other-extensions:
   build-depends:       base >=4.8 && <4.9
                      , aeson
+                     , lens-aeson
                      , authenticate-oauth
                      , bifunctors
                      , bytestring
@@ -44,6 +46,8 @@ library
                      , errors
                      , exceptions
                      , groom
+                     , hoauth2
+                     , http-client
                      , http-conduit
                      , lens
                      , lucid
@@ -57,6 +61,7 @@ library
                      , placeholders
                      , resourcet
                      , safe-exceptions
+                     , sandi
                      , time
                      , transformers
                      , transformers-base
@@ -66,6 +71,7 @@ library
                      , twitter-types
                      , twitter-types-lens
                      , unordered-containers
+                     , wreq
                      , xml-conduit
                      , xml-lens
                      , xml-types

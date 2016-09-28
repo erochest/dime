@@ -39,10 +39,8 @@ import           Database.Persist               hiding (count)
 import           GHC.Generics                   hiding (to)
 import           Network.HTTP.Conduit
 import           System.Environment
-import           System.IO
 import           Web.Authenticate.OAuth         hiding (insert)
 import qualified Web.Authenticate.OAuth         as OAuth
-import           Web.Browser
 import           Web.Twitter.Conduit            hiding (count, maxId, sinceId,
                                                  update)
 import           Web.Twitter.Conduit.Parameters
@@ -135,7 +133,7 @@ loadTwitter = do
                      ] []
     maybe (throwD ex) return $ do
         (Entity sid s') <- s
-        token  <- encodeUtf8 <$> _serviceInfoAccessToken s'
+        token  <- encodeUtf8 <$> _serviceInfoAccessToken  s'
         secret <- encodeUtf8 <$> _serviceInfoAccessSecret s'
         return $ TwitterStream (Just sid) (token, secret)
     where
@@ -152,7 +150,7 @@ saveTwitter ts@(TwitterStream Nothing    (t, s)) = do
         . insert
         $ ServiceInfo TwitterService False
                       (Just (decodeUtf8 t)) (Just (decodeUtf8 s))
-    return (k, ts & twitterServiceId .~ Just k)
+    return (k, ts & twitterServiceId ?~ k)
 
 lastTwitterUpdateDate :: Dialogue (Maybe UTCTime)
 lastTwitterUpdateDate =
@@ -247,14 +245,6 @@ downloadTwitterMessages ts = do
     idx    <- indexHandles TwitterService
     lastId <- lastTwitterUpdateID
     insertDMs idx =<< downloadDMs ts lastId
-
-getPIN :: String -> String -> ResourceT IO ByteString
-getPIN provider uri = liftIO $ do
-    F.print "Opening {}: <{}>\n" (provider, uri)
-    void $ openBrowser uri
-    F.print "> what was the PIN {} provided?" $ Only provider
-    hFlush stdout
-    C8.getLine
 
 loginTwitter :: Dialogue (ByteString, ByteString)
 loginTwitter = do
