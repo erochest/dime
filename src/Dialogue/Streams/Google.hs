@@ -303,6 +303,9 @@ downloadGoogleMessages gs = do
                 <$> maybe (return mempty) (go o oq . Just)
                 (   ml ^. messagesNextPageToken)
 
+            -- TODO: Get full individual messages in a bulk request.
+            -- https://developers.google.com/gmail/api/guides/batch
+            -- TODO: rate limiting
             -- TODO: should i add these into database at this point or do it later?
             -- TODO: catch errors and abort?
 

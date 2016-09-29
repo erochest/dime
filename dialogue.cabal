@@ -51,6 +51,7 @@ library
                      , http-conduit
                      , lens
                      , lucid
+                     , mime-mail
                      , monad-control
                      , monad-logger
                      , mtl
