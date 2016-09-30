@@ -49,9 +49,9 @@ library
                      , hoauth2
                      , http-client
                      , http-conduit
+                     , http-types
                      , lens
                      , lucid
-                     , mime-mail
                      , monad-control
                      , monad-logger
                      , mtl
@@ -63,6 +63,7 @@ library
                      , resourcet
                      , safe-exceptions
                      , sandi
+                     , split
                      , time
                      , transformers
                      , transformers-base

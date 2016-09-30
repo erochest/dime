@@ -29,7 +29,6 @@ import           Data.ByteString              (ByteString)
 import qualified Data.ByteString              as B
 import qualified Data.ByteString.Char8        as C8
 import qualified Data.ByteString.Lazy.Char8   as L8
-import qualified Data.ByteString.Lazy.Char8   as BL8
 import           Data.Char                    (toLower)
 import           Data.Data
 import           Data.Foldable
@@ -44,10 +43,19 @@ import           Data.Time
 import           Data.Time.Clock.POSIX
 import           Database.Persist
 import           GHC.Generics                 hiding (to)
-import           Network.HTTP.Conduit         hiding (responseBody)
+import           Network.HTTP.Conduit         hiding (responseBody, lbsResponse)
 import           Network.OAuth.OAuth2
 import           Network.Wreq                 hiding (Payload, header)
 import           System.Environment
+import Network.Wreq.Types hiding (Payload, manager, auth)
+import Network.HTTP.Client.MultipartFormData (webkitBoundary, renderParts)
+import Network.HTTP.Client.Internal hiding ((<>), responseBody)
+import Network.HTTP.Types.Header (hContentType)
+import Network.HTTP.Types.Method
+import Control.Arrow ((&&&))
+import Data.List.Split
+import Control.Concurrent
+import qualified Data.Text.Format as F
 
 import           Dialogue.Fields
 import           Dialogue.Handles
@@ -177,6 +185,25 @@ instance ToJSON MessageList where
 instance FromJSON MessageList where
     parseJSON = genericParseJSON (googleOptions 9)
 
+newtype MultipartMixed = MultiMixed { unMix :: [Part] }
+                       deriving (Show, Typeable, Generic)
+$(makeLenses ''MultipartMixed)
+
+instance Postable MultipartMixed where
+    -- copied and pasted from Network.HTTP.Client.MultipartFormData.
+    -- Yuck.
+    -- Brittle.
+    postPayload (MultiMixed ps) req = do
+        boundary <- webkitBoundary
+        body <- renderParts boundary ps
+        return $ req
+               { method = methodPost
+               , requestHeaders =
+                   (hContentType , "multipart/mixed; boundary=" <> boundary)
+                    : filter (\(x, _) -> x /= hContentType) (requestHeaders req)
+               , requestBody = body
+               }
+
 liftFetch :: IO (OAuth2Result a) -> Dialogue a
 liftFetch =   hoistE
           .   first (toException . GoogleException . decodeUtf8 . L8.toStrict)
@@ -275,12 +302,13 @@ downloadGoogleMessages gs = do
                                       ] [])
     let q    = TL.toStrict $ format "{{from:{} to:{}}}" (other, other)
         opts = defaults
-             & manager   .~ Right m
-             & auth      ?~ oauth2Bearer (accessToken token)
+             & manager            .~ Right m
+             & auth               ?~ oauth2Bearer (accessToken token)
+             & param "maxResults" .~ ["50"]
         optq = opts & param "q" .~ [q]
     me       <-  hoistM (GoogleException "Invalid user profile")
              .   preview (key "emailAddress" . _String)
-             =<< (asJSON' :: Response BL8.ByteString -> Dialogue Value)
+             =<< (asJSON' :: Response L8.ByteString -> Dialogue Value)
              =<< liftIO (getWith opts meUrl)
     messages <- go opts optq Nothing
     liftSql
@@ -289,27 +317,78 @@ downloadGoogleMessages gs = do
         . mapMaybe (toGM idx (me, other))
         $ toList messages
     where
-        url   = "https://www.googleapis.com/gmail/v1/users/me/messages"
-        meUrl = "https://www.googleapis.com/gmail/v1/users/me/profile"
+        messagesPath = "/gmail/v1/users/me/messages"
+        url          = "https://www.googleapis.com" <> messagesPath
+        meUrl        = "https://www.googleapis.com/gmail/v1/users/me/profile"
+        batchUrl     = "https://www.googleapis.com/batch"
+
+        batchGet :: Options -> [(T.Text, String)] -> Dialogue (Response [Response L8.ByteString])
+        batchGet o gets = do
+            msg <- liftIO
+                $  postWith o batchUrl
+                $  MultiMixed
+                $  map ( (partContentType ?~ "application/http")
+                       . uncurry partString
+                       . second (("GET " <>) . (<> "\r\n"))
+                       ) gets
+            liftIO $ L8.writeFile "mulitpart.txt" $ msg ^. responseBody
+            parseMulti msg
 
         go :: Options -> Options -> Maybe T.Text -> Dialogue (Seq.Seq Message)
         go o oq p = do
+            F.print "get page {}" $ Only p
             let o' = maybe oq (flip (set (param "pageToken")) oq . pure) p
-            ml <- asJSON' =<< liftIO (getWith o' url)
-            ms <-  mapM asJSON'
-               =<< mapM (liftIO . getWith o . (url <>) . ("/" <>) . T.unpack)
-               (   ml ^.. messagesMessages . traverse . messageShortId)
+            ml <-  asJSON' =<< liftIO (getWith o' url)
+            ms <-  mapM asJSON' . view responseBody
+               =<< batchGet o
+               (   map (id &&& (TL.unpack . format "{}/{}" . (messagesPath,)))
+                        (ml ^.. messagesMessages . traverse . messageShortId))
             mappend (Seq.fromList ms)
-                <$> maybe (return mempty) (go o oq . Just)
+                <$> maybe (return mempty) (go o oq . Just <=< throttle')
                 (   ml ^. messagesNextPageToken)
 
-            -- TODO: Get full individual messages in a bulk request.
-            -- https://developers.google.com/gmail/api/guides/batch
-            -- TODO: rate limiting
+            -- TODO: filter any we've seen before and also stop when there aren't any left
             -- TODO: should i add these into database at this point or do it later?
+            -- TODO: if adding into the database then, refactor as a conduit?
             -- TODO: catch errors and abort?
 
-asJSON' :: FromJSON a => Response BL8.ByteString -> Dialogue a
+        throttle' :: x -> Dialogue x
+        throttle' x = liftIO (threadDelay 5000) >> return x
+
+        parseMulti :: Response L8.ByteString -> Dialogue (Response [Response L8.ByteString])
+        parseMulti r
+            | not (isMultipartMixed r) = return $ const [r] <$> r
+            | otherwise =
+                traverse (parseMulti' (r ^. responseHeader "Content-Type")) r
+
+        parseMulti' :: C8.ByteString -> L8.ByteString -> Dialogue [Response L8.ByteString]
+        parseMulti' cType multi = do
+            -- NB: 'drop 2' below just gets rid of a
+            -- "Content-Type: application/http" header
+            cxns <- liftIO
+                 .  mapM ( dummyConnection
+                         . pure
+                         . L8.toStrict
+                         . L8.unlines
+                         . drop 2)
+                 .  wordsBy (C8.isInfixOf b . L8.toStrict)
+                 $  L8.lines multi
+            forM cxns $ \(c, _, _) -> do
+                req  <- liftIO . parseRequest $ "GET " <> url
+                liftIO
+                    $   lbsResponse
+                    =<< getResponse (const $ return ()) Nothing req c Nothing
+            where
+                b = C8.concat
+                  . concatMap (drop 1 . C8.split '=')
+                  . drop 1
+                  $ C8.split ';' cType
+
+        isMultipartMixed :: Response L8.ByteString -> Bool
+        isMultipartMixed r =
+            "multipart/mixed" `C8.isPrefixOf` (r ^. responseHeader "Content-Type")
+
+asJSON' :: FromJSON a => Response L8.ByteString -> Dialogue a
 asJSON' = hoistE . (toException `bimap` view responseBody) . asJSON
 
 hdr :: T.Text -> Prism' Header Header
@@ -332,7 +411,7 @@ toGM idx users m = do
     return
         $ GoogleMessage (m ^. messageId) time s r content
         . decodeUtf8
-        . BL8.toStrict
+        . L8.toStrict
         $ encode m
     where
         getUsers :: HandleIndex -> (T.Text, T.Text) -> [Header]

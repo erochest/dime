@@ -83,7 +83,7 @@ bench:
 	stack bench $(BUILD_FLAGS)
 
 watch:
-	stack build --file-watch --pedantic --fast --exec 'make run'
+	stack build --file-watch --pedantic --fast --exec 'make google'
 
 watch-test:
 	stack test --file-watch --pedantic
