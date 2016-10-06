@@ -5,6 +5,7 @@
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UndecidableInstances       #-}
@@ -126,6 +127,12 @@ runDialogueT :: (MonadBaseControl IO m, MonadIO m)
              => T.Text -> DialogueT e m a -> m (Either e a)
 runDialogueT sqliteFile d =
     runStderrLoggingT $ runDialogueDB sqliteFile d
+
+runDialogueTest :: (MonadBaseControl IO m, MonadIO m)
+                => SqlPersistT (DialogueT SomeException m) ()
+                -> DialogueT SomeException m a -> m (Either SomeException a)
+runDialogueTest fixture d =
+    runStderrLoggingT $ runDialogueDB ":memory:" $ liftSql fixture >> d
 
 runDialogueL :: (Exception e, MonadBaseControl IO m, MonadIO m)
              => T.Text -> DialogueT e m a -> LoggingT (ExceptT e m) a

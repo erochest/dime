@@ -101,5 +101,5 @@ decimalE :: Integral a => T.Text -> Either String a
 decimalE t = do
     (x, r) <- decimal t
     if T.null r
-        then Left "Trailing text while parsing a number."
-        else Right x
+        then Right x
+        else Left "Trailing text while parsing a number."

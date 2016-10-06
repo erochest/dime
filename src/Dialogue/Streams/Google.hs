@@ -12,50 +12,53 @@
 module Dialogue.Streams.Google where
 
 
-import qualified Codec.Binary.QuotedPrintable as QP
+import qualified Codec.Binary.Base64                   as B64
+import           Conduit
 import           Control.Applicative
+import           Control.Arrow                         ((&&&), (***))
+import           Control.Concurrent                    hiding (yield)
 import           Control.Error
 import           Control.Exception.Safe
 import           Control.Lens
 import           Control.Monad
-import           Control.Monad.IO.Class
-import           Control.Monad.Trans.Resource
 import           Data.Aeson
 import           Data.Aeson.Lens
-import           Data.Aeson.Types             hiding (Options)
-import qualified Data.Aeson.Types             as AT
+import           Data.Aeson.Types                      hiding (Options)
+import qualified Data.Aeson.Types                      as AT
 import           Data.Bifunctor
-import           Data.ByteString              (ByteString)
-import qualified Data.ByteString              as B
-import qualified Data.ByteString.Char8        as C8
-import qualified Data.ByteString.Lazy.Char8   as L8
-import           Data.Char                    (toLower)
+import           Data.ByteString                       (ByteString)
+import qualified Data.ByteString                       as B
+import qualified Data.ByteString.Char8                 as C8
+import qualified Data.ByteString.Lazy.Char8            as L8
+import           Data.Char                             (toLower)
 import           Data.Data
 import           Data.Foldable
-import qualified Data.HashMap.Strict          as M
+import qualified Data.HashMap.Strict                   as M
+import qualified Data.HashSet                          as S
+import           Data.List.Split
 import           Data.Monoid
-import qualified Data.Sequence                as Seq
-import qualified Data.Text                    as T
+import qualified Data.Text                             as T
 import           Data.Text.Encoding
 import           Data.Text.Format
-import qualified Data.Text.Lazy               as TL
+import qualified Data.Text.Format                      as F
+import qualified Data.Text.Lazy                        as TL
 import           Data.Time
 import           Data.Time.Clock.POSIX
 import           Database.Persist
-import           GHC.Generics                 hiding (to)
-import           Network.HTTP.Conduit         hiding (responseBody, lbsResponse)
+import           GHC.Generics                          hiding (to)
+import           Network.HTTP.Client.Internal          hiding (responseBody,
+                                                        (<>))
+import           Network.HTTP.Client.MultipartFormData (renderParts,
+                                                        webkitBoundary)
+import           Network.HTTP.Conduit                  hiding (lbsResponse,
+                                                        responseBody)
+import           Network.HTTP.Types.Header             (hContentType)
+import           Network.HTTP.Types.Method
 import           Network.OAuth.OAuth2
-import           Network.Wreq                 hiding (Payload, header)
+import           Network.Wreq                          hiding (Payload, header)
+import           Network.Wreq.Types                    hiding (Payload, auth,
+                                                        manager)
 import           System.Environment
-import Network.Wreq.Types hiding (Payload, manager, auth)
-import Network.HTTP.Client.MultipartFormData (webkitBoundary, renderParts)
-import Network.HTTP.Client.Internal hiding ((<>), responseBody)
-import Network.HTTP.Types.Header (hContentType)
-import Network.HTTP.Types.Method
-import Control.Arrow ((&&&))
-import Data.List.Split
-import Control.Concurrent
-import qualified Data.Text.Format as F
 
 import           Dialogue.Fields
 import           Dialogue.Handles
@@ -63,6 +66,13 @@ import           Dialogue.Models
 import           Dialogue.Types.Dialogue
 import           Dialogue.Utils
 
+
+messagesPath, messagesUrl, meUrl, batchUrl :: String
+
+messagesPath = "/gmail/v1/users/me/messages"
+messagesUrl  = "https://www.googleapis.com" <> messagesPath
+meUrl        = "https://www.googleapis.com/gmail/v1/users/me/profile"
+batchUrl     = "https://www.googleapis.com/batch"
 
 newtype GoogleException = GoogleException { unGoogleException :: T.Text }
                         deriving (Show, Eq, Data, Typeable, Generic)
@@ -291,6 +301,10 @@ downloadGoogleMessages :: GoogleStream -> Dialogue [Entity GoogleMessage]
 downloadGoogleMessages gs = do
     oauth2   <-  googleOAuth
     idx      <-  indexHandles GoogleService
+    seen     <-  liftSql
+             $   S.fromList
+             .   map (_googleMessageGoogleId . entityVal)
+             <$> selectList [] []
     -- lastId   <-  lastGoogleUpdateID
     m        <-  liftIO $ newManager tlsManagerSettings
     token    <-  liftFetch $ fetchRefreshToken m oauth2 $ gs ^. googleRefresh
@@ -304,24 +318,29 @@ downloadGoogleMessages gs = do
         opts = defaults
              & manager            .~ Right m
              & auth               ?~ oauth2Bearer (accessToken token)
-             & param "maxResults" .~ ["50"]
         optq = opts & param "q" .~ [q]
+                    & param "maxResults" .~ ["100"]
     me       <-  hoistM (GoogleException "Invalid user profile")
              .   preview (key "emailAddress" . _String)
              =<< (asJSON' :: Response L8.ByteString -> Dialogue Value)
              =<< liftIO (getWith opts meUrl)
-    messages <- go opts optq Nothing
-    liftSql
-        $ fmap catMaybes
-        . mapM insertUniqueEntity
-        . mapMaybe (toGM idx (me, other))
-        $ toList messages
+    -- TODO: catch errors and abort?
+    -- TODO: remove watches and traces
+    runResourceT
+        $   pages optq Nothing
+        =$= mapC _messageShortId
+        =$= filterC (not . (`S.member` seen))
+        =$= chunkC 50
+        =$= iterMC      (liftIO . const (threadDelay 5000))
+        =$= mapMC       ( lift
+                        . batchGet opts
+                        . map (id &&& (TL.unpack . format "{}/{}" . (messagesPath,))))
+        =$= concatMapC  (view responseBody)
+        =$= mapMC       (lift . (asJSON' :: Response L8.ByteString -> Dialogue Message))
+        =$= concatMapC  (toGM idx (me, other))
+        =$= concatMapMC (lift . liftSql . insertUniqueEntity)
+        $$  sinkList
     where
-        messagesPath = "/gmail/v1/users/me/messages"
-        url          = "https://www.googleapis.com" <> messagesPath
-        meUrl        = "https://www.googleapis.com/gmail/v1/users/me/profile"
-        batchUrl     = "https://www.googleapis.com/batch"
-
         batchGet :: Options -> [(T.Text, String)] -> Dialogue (Response [Response L8.ByteString])
         batchGet o gets = do
             msg <- liftIO
@@ -331,62 +350,64 @@ downloadGoogleMessages gs = do
                        . uncurry partString
                        . second (("GET " <>) . (<> "\r\n"))
                        ) gets
-            liftIO $ L8.writeFile "mulitpart.txt" $ msg ^. responseBody
+            let filename = TL.unpack $ F.format "multi-{}.txt" $ Only $ fst $ head gets
+            liftIO $ L8.writeFile filename $ msg ^. responseBody
             parseMulti msg
 
-        go :: Options -> Options -> Maybe T.Text -> Dialogue (Seq.Seq Message)
-        go o oq p = do
+        chunkC :: Monad m => Int -> Conduit a m [a]
+        chunkC n = do
+            xs <- catMaybes <$> replicateM n await
+            case xs of
+                []  -> return ()
+                xs' -> yield xs' >> chunkC n
+
+        pages :: Options -> Maybe T.Text
+              -> Producer (ResourceT Dialogue) MessageShort
+        pages o p = do
             F.print "get page {}" $ Only p
-            let o' = maybe oq (flip (set (param "pageToken")) oq . pure) p
-            ml <-  asJSON' =<< liftIO (getWith o' url)
-            ms <-  mapM asJSON' . view responseBody
-               =<< batchGet o
-               (   map (id &&& (TL.unpack . format "{}/{}" . (messagesPath,)))
-                        (ml ^.. messagesMessages . traverse . messageShortId))
-            mappend (Seq.fromList ms)
-                <$> maybe (return mempty) (go o oq . Just <=< throttle')
-                (   ml ^. messagesNextPageToken)
+            let o' = maybe o (flip (set (param "pageToken")) o . pure) p
+            ml <- lift . lift . asJSON' =<< liftIO (getWith o' messagesUrl)
+            case ml ^. messagesMessages of
+                [] -> return ()
+                ms -> do
+                    yieldMany ms
+                    return ()
+                    case ml ^. messagesNextPageToken of
+                        pt@(Just _) -> pages o pt
+                        Nothing     -> return ()
 
-            -- TODO: filter any we've seen before and also stop when there aren't any left
-            -- TODO: should i add these into database at this point or do it later?
-            -- TODO: if adding into the database then, refactor as a conduit?
-            -- TODO: catch errors and abort?
+parseMulti :: Response L8.ByteString -> Dialogue (Response [Response L8.ByteString])
+parseMulti r
+    | not (isMultipartMixed r) = return $ const [r] <$> r
+    | otherwise =
+        traverse (parseMulti' (r ^. responseHeader "Content-Type")) r
 
-        throttle' :: x -> Dialogue x
-        throttle' x = liftIO (threadDelay 5000) >> return x
+parseMulti' :: C8.ByteString -> L8.ByteString -> Dialogue [Response L8.ByteString]
+parseMulti' cType multi = do
+    -- NB: 'drop 2' below just gets rid of a
+    -- "Content-Type: application/http" header
+    cxns <- liftIO
+         .  mapM ( dummyConnection
+                 . pure
+                 . L8.toStrict
+                 . L8.unlines
+                 . drop 2)
+         .  wordsBy (C8.isInfixOf b . L8.toStrict)
+         $  L8.lines multi
+    forM cxns $ \(c, _, _) -> do
+        req  <- liftIO . parseRequest $ "GET " <> messagesUrl
+        liftIO
+            $   lbsResponse
+            =<< getResponse (const $ return ()) Nothing req c Nothing
+    where
+        b = C8.concat
+          . concatMap (drop 1 . C8.split '=')
+          . drop 1
+          $ C8.split ';' cType
 
-        parseMulti :: Response L8.ByteString -> Dialogue (Response [Response L8.ByteString])
-        parseMulti r
-            | not (isMultipartMixed r) = return $ const [r] <$> r
-            | otherwise =
-                traverse (parseMulti' (r ^. responseHeader "Content-Type")) r
-
-        parseMulti' :: C8.ByteString -> L8.ByteString -> Dialogue [Response L8.ByteString]
-        parseMulti' cType multi = do
-            -- NB: 'drop 2' below just gets rid of a
-            -- "Content-Type: application/http" header
-            cxns <- liftIO
-                 .  mapM ( dummyConnection
-                         . pure
-                         . L8.toStrict
-                         . L8.unlines
-                         . drop 2)
-                 .  wordsBy (C8.isInfixOf b . L8.toStrict)
-                 $  L8.lines multi
-            forM cxns $ \(c, _, _) -> do
-                req  <- liftIO . parseRequest $ "GET " <> url
-                liftIO
-                    $   lbsResponse
-                    =<< getResponse (const $ return ()) Nothing req c Nothing
-            where
-                b = C8.concat
-                  . concatMap (drop 1 . C8.split '=')
-                  . drop 1
-                  $ C8.split ';' cType
-
-        isMultipartMixed :: Response L8.ByteString -> Bool
-        isMultipartMixed r =
-            "multipart/mixed" `C8.isPrefixOf` (r ^. responseHeader "Content-Type")
+isMultipartMixed :: Response L8.ByteString -> Bool
+isMultipartMixed r =
+    "multipart/mixed" `C8.isPrefixOf` (r ^. responseHeader "Content-Type")
 
 asJSON' :: FromJSON a => Response L8.ByteString -> Dialogue a
 asJSON' = hoistE . (toException `bimap` view responseBody) . asJSON
@@ -394,22 +415,29 @@ asJSON' = hoistE . (toException `bimap` view responseBody) . asJSON
 hdr :: T.Text -> Prism' Header Header
 hdr n = prism' id (\h -> if _headerName h == n then Just h else Nothing)
 
+decodeContent :: C8.ByteString -> Either SomeException T.Text
+decodeContent = (       (toException . GoogleException . decodeUtf8 . fst)
+                `bimap` decodeUtf8)
+              . B64.decode
+
+decodeDate :: T.Text -> Either SomeException UTCTime
+decodeDate = (       (toException . GoogleException . T.pack)
+             `bimap` (posixSecondsToUTCTime . (/1000) . realToFrac))
+           . (decimalE :: T.Text -> Either String Integer)
+
 toGM :: HandleIndex -> (T.Text, T.Text) -> Message -> Maybe GoogleMessage
 toGM idx users m = do
     let pl = m ^. messagePayload
-    (s, r)  <- getUsers idx users $ pl ^.. payloadHeaders . _Just . traverse
-    time    <- hush
-            .  fmap (posixSecondsToUTCTime . realToFrac)
-            .  (decimalE :: T.Text -> Either String Integer)
-            $  m ^. messageInternalDate
-    content <-  pl ^. payloadBody . attachmentData
-            <|> (   hush . fmap decodeUtf8 . QP.decode
-                =<< preview (payloadBody . attachmentData . _Just . to encodeUtf8)
+    (s, r)  <-  getUsers idx users $ pl ^.. payloadHeaders . _Just . traverse
+    time    <-  hush $ decodeDate $ m ^. messageInternalDate
+    content <-  pl ^? payloadBody . attachmentData . _Just . to encodeUtf8
+            <|> (   preview (payloadBody . attachmentData . _Just . to encodeUtf8)
                 =<< listToMaybe . filter isTextPart
                 =<< pl ^. payloadParts
                 )
+    decoded <-  hush $ decodeContent content
     return
-        $ GoogleMessage (m ^. messageId) time s r content
+        $ GoogleMessage (m ^. messageId) time s r decoded
         . decodeUtf8
         . L8.toStrict
         $ encode m
@@ -417,9 +445,20 @@ toGM idx users m = do
         getUsers :: HandleIndex -> (T.Text, T.Text) -> [Header]
                  -> Maybe (HandleId, HandleId)
         getUsers i (u1, u2) hs = do
-            sender <- hs ^? traverse . hdr "From" . headerValue
+            sender <- hs ^? traverse . hdr "From" . headerValue . to parseEmail . _2
             let recipient = if sender == u1 then u2 else u1
             (,) <$> M.lookup sender i <*> M.lookup recipient i
+
+        parseEmail :: T.Text -> (Maybe T.Text, T.Text)
+        parseEmail e =
+            case T.breakOn " <" e of
+                (email, r) | T.null r -> (Nothing, email)
+                pair -> (Just *** (T.dropAround isBracket . T.strip)) pair
+
+        isBracket :: Char -> Bool
+        isBracket '<' = True
+        isBracket '>' = True
+        isBracket _   = False
 
         isTextPart :: Payload -> Bool
         isTextPart = any isTextHeader . fold . _payloadHeaders

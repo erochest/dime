@@ -107,13 +107,16 @@ test-suite dialogue-specs
   ghc-options:         -threaded -rtsopts
   hs-source-dirs:      specs
   main-is:             Specs.hs
-  other-modules:         Dialogue.Stream.NoteSpec
+  other-modules:         Dialogue.Stream.GoogleSpec
+                       , Dialogue.Stream.NoteSpec
   build-depends:         base
                        , dialogue
+                       , bytestring
                        , errors
                        , lens
                        , text
                        , time
+                       , wreq
                        , QuickCheck
                        , smallcheck
                        , hspec

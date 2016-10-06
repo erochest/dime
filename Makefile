@@ -86,7 +86,7 @@ watch:
 	stack build --file-watch --pedantic --fast --exec 'make google'
 
 watch-test:
-	stack test --file-watch --pedantic
+	stack test --file-watch --pedantic --test-arguments "-m Google"
 
 restart: distclean build
 

@@ -1,0 +1,1217 @@
+--batch_endW4uAcPQU_AAMiKCgyOAE
+Content-Type: application/http
+
+HTTP/1.1 200 OK
+ETag: "SJIjOPuAzi7meWvLIr4rJgaI0K4/yWHt-kbHWHb7eX__ihkpXNwha34"
+Content-Type: application/json; charset=UTF-8
+Date: Wed, 05 Oct 2016 11:03:49 GMT
+Expires: Wed, 05 Oct 2016 11:03:49 GMT
+Cache-Control: private, max-age=0
+Content-Length: 511
+
+{
+ "threadId": "157711232f17ad9a",
+ "labelIds": [
+  "CHAT"
+ ],
+ "payload": {
+  "headers": [
+   {
+    "name": "From",
+    "value": "James Klein <eholland@wu-henry.org>"
+   }
+  ],
+  "mimeType": "text/html",
+  "filename": "",
+  "body": {
+   "size": 56,
+   "data": "SXRhcXVlIG1hZ25pIHBlcmZlcmVuZGlzIGxhYm9yaW9zYW0gdml0YWUu"
+  },
+  "partId": ""
+ },
+ "historyId": "13124334",
+ "sizeEstimate": 100,
+ "id": "1577138206471be4",
+ "internalDate": "1475073286244",
+ "snippet": "Itaque magni perferendis laboriosam vitae."
+}
+
+--batch_endW4uAcPQU_AAMiKCgyOAE
+Content-Type: application/http
+
+HTTP/1.1 200 OK
+ETag: "SJIjOPuAzi7meWvLIr4rJgaI0K4/UXw3isUoLiKotQyk6kCRCu6FHpk"
+Content-Type: application/json; charset=UTF-8
+Date: Wed, 05 Oct 2016 11:03:49 GMT
+Expires: Wed, 05 Oct 2016 11:03:49 GMT
+Cache-Control: private, max-age=0
+Content-Length: 523
+
+{
+ "snippet": "In maxime at exercitationem assumenda nesciunt.",
+ "payload": {
+  "headers": [
+   {
+    "value": "Melissa Mason <alicia00@yahoo.com>",
+    "name": "From"
+   }
+  ],
+  "filename": "",
+  "body": {
+   "size": 64,
+   "data": "SW4gbWF4aW1lIGF0IGV4ZXJjaXRhdGlvbmVtIGFzc3VtZW5kYSBuZXNjaXVudC4="
+  },
+  "mimeType": "text/html",
+  "partId": ""
+ },
+ "sizeEstimate": 100,
+ "threadId": "157711232f17ad9a",
+ "labelIds": [
+  "CHAT"
+ ],
+ "id": "1577137ab7b7096d",
+ "historyId": "13124325",
+ "internalDate": "1475073256315"
+}
+
+--batch_endW4uAcPQU_AAMiKCgyOAE
+Content-Type: application/http
+
+HTTP/1.1 200 OK
+ETag: "SJIjOPuAzi7meWvLIr4rJgaI0K4/07h0DsPoElYeu3TtmXsn59A9sb8"
+Content-Type: application/json; charset=UTF-8
+Date: Wed, 05 Oct 2016 11:03:49 GMT
+Expires: Wed, 05 Oct 2016 11:03:49 GMT
+Cache-Control: private, max-age=0
+Content-Length: 496
+
+{
+ "internalDate": "1475073236467",
+ "labelIds": [
+  "CHAT"
+ ],
+ "id": "15771375df394215",
+ "snippet": "Magni minima quas perspiciatis vero.",
+ "historyId": "13124249",
+ "sizeEstimate": 100,
+ "threadId": "157711232f17ad9a",
+ "payload": {
+  "filename": "",
+  "mimeType": "text/html",
+  "headers": [
+   {
+    "value": "Melissa Mason <alicia00@yahoo.com>",
+    "name": "From"
+   }
+  ],
+  "partId": "",
+  "body": {
+   "data": "TWFnbmkgbWluaW1hIHF1YXMgcGVyc3BpY2lhdGlzIHZlcm8u",
+   "size": 48
+  }
+ }
+}
+
+--batch_endW4uAcPQU_AAMiKCgyOAE
+Content-Type: application/http
+
+HTTP/1.1 200 OK
+ETag: "SJIjOPuAzi7meWvLIr4rJgaI0K4/_4JEg9WbC6s60LLa8g_6zRtESQg"
+Content-Type: application/json; charset=UTF-8
+Date: Wed, 05 Oct 2016 11:03:49 GMT
+Expires: Wed, 05 Oct 2016 11:03:49 GMT
+Cache-Control: private, max-age=0
+Content-Length: 545
+
+{
+ "snippet": "Incidunt praesentium aliquid nulla architecto eum optio.",
+ "sizeEstimate": 100,
+ "internalDate": "1475073224980",
+ "historyId": "13124240",
+ "id": "15771373114a8570",
+ "labelIds": [
+  "CHAT"
+ ],
+ "threadId": "157711232f17ad9a",
+ "payload": {
+  "body": {
+   "size": 76,
+   "data": "SW5jaWR1bnQgcHJhZXNlbnRpdW0gYWxpcXVpZCBudWxsYSBhcmNoaXRlY3RvIGV1bSBvcHRpby4="
+  },
+  "headers": [
+   {
+    "value": "James Klein <eholland@wu-henry.org>",
+    "name": "From"
+   }
+  ],
+  "filename": "",
+  "partId": "",
+  "mimeType": "text/html"
+ }
+}
+
+--batch_endW4uAcPQU_AAMiKCgyOAE
+Content-Type: application/http
+
+HTTP/1.1 200 OK
+ETag: "SJIjOPuAzi7meWvLIr4rJgaI0K4/2w1jH6G9ctayzPSVDFJ-9DkofmU"
+Content-Type: application/json; charset=UTF-8
+Date: Wed, 05 Oct 2016 11:03:49 GMT
+Expires: Wed, 05 Oct 2016 11:03:49 GMT
+Cache-Control: private, max-age=0
+Content-Length: 544
+
+{
+ "sizeEstimate": 100,
+ "threadId": "157711232f17ad9a",
+ "internalDate": "1475073005835",
+ "snippet": "Molestiae velit asperiores neque veniam cumque adipisci.",
+ "historyId": "13124212",
+ "payload": {
+  "mimeType": "text/html",
+  "partId": "",
+  "headers": [
+   {
+    "value": "Melissa Mason <alicia00@yahoo.com>",
+    "name": "From"
+   }
+  ],
+  "filename": "",
+  "body": {
+   "data": "TW9sZXN0aWFlIHZlbGl0IGFzcGVyaW9yZXMgbmVxdWUgdmVuaWFtIGN1bXF1ZSBhZGlwaXNjaS4=",
+   "size": 76
+  }
+ },
+ "id": "1577133d90b3a78f",
+ "labelIds": [
+  "CHAT"
+ ]
+}
+
+--batch_endW4uAcPQU_AAMiKCgyOAE
+Content-Type: application/http
+
+HTTP/1.1 200 OK
+ETag: "SJIjOPuAzi7meWvLIr4rJgaI0K4/0zh8iZYHuqI9xPGqg40XQLi9O5I"
+Content-Type: application/json; charset=UTF-8
+Date: Wed, 05 Oct 2016 11:03:49 GMT
+Expires: Wed, 05 Oct 2016 11:03:49 GMT
+Cache-Control: private, max-age=0
+Content-Length: 455
+
+{
+ "sizeEstimate": 100,
+ "internalDate": "1475072992480",
+ "labelIds": [
+  "CHAT"
+ ],
+ "payload": {
+  "mimeType": "text/html",
+  "body": {
+   "data": "RXN0IHF1aWEgcmVtIG9kaXQu",
+   "size": 24
+  },
+  "partId": "",
+  "filename": "",
+  "headers": [
+   {
+    "name": "From",
+    "value": "James Klein <eholland@wu-henry.org>"
+   }
+  ]
+ },
+ "threadId": "157711232f17ad9a",
+ "id": "1577133a4e000f19",
+ "historyId": "13124194",
+ "snippet": "Est quia rem odit."
+}
+
+--batch_endW4uAcPQU_AAMiKCgyOAE
+Content-Type: application/http
+
+HTTP/1.1 200 OK
+ETag: "SJIjOPuAzi7meWvLIr4rJgaI0K4/nuCN8kdsS2HERdD8sUw6lQH1qfo"
+Content-Type: application/json; charset=UTF-8
+Date: Wed, 05 Oct 2016 11:03:49 GMT
+Expires: Wed, 05 Oct 2016 11:03:49 GMT
+Cache-Control: private, max-age=0
+Content-Length: 552
+
+{
+ "internalDate": "1475072978093",
+ "historyId": "13124185",
+ "payload": {
+  "filename": "",
+  "body": {
+   "data": "TmloaWwgYWIgcHJhZXNlbnRpdW0gaGFydW0gZXhlcmNpdGF0aW9uZW0gZG9sb3JlcyBtb2xsaXRpYS4=",
+   "size": 80
+  },
+  "partId": "",
+  "headers": [
+   {
+    "name": "From",
+    "value": "James Klein <eholland@wu-henry.org>"
+   }
+  ],
+  "mimeType": "text/html"
+ },
+ "snippet": "Nihil ab praesentium harum exercitationem dolores mollitia.",
+ "id": "15771336cad98547",
+ "threadId": "157711232f17ad9a",
+ "sizeEstimate": 100,
+ "labelIds": [
+  "CHAT"
+ ]
+}
+
+--batch_endW4uAcPQU_AAMiKCgyOAE
+Content-Type: application/http
+
+HTTP/1.1 200 OK
+ETag: "SJIjOPuAzi7meWvLIr4rJgaI0K4/kUVfHqB2muoFh6a-7Hqsx1ZVZaQ"
+Content-Type: application/json; charset=UTF-8
+Date: Wed, 05 Oct 2016 11:03:49 GMT
+Expires: Wed, 05 Oct 2016 11:03:49 GMT
+Cache-Control: private, max-age=0
+Content-Length: 565
+
+{
+ "sizeEstimate": 100,
+ "snippet": "Cumque ipsa ad aspernatur molestiae quaerat nisi maiores ratione.",
+ "id": "1577133557f8053a",
+ "historyId": "13124176",
+ "internalDate": "1475072972159",
+ "threadId": "157711232f17ad9a",
+ "payload": {
+  "filename": "",
+  "partId": "",
+  "mimeType": "text/html",
+  "headers": [
+   {
+    "name": "From",
+    "value": "Melissa Mason <alicia00@yahoo.com>"
+   }
+  ],
+  "body": {
+   "data": "Q3VtcXVlIGlwc2EgYWQgYXNwZXJuYXR1ciBtb2xlc3RpYWUgcXVhZXJhdCBuaXNpIG1haW9yZXMgcmF0aW9uZS4=",
+   "size": 88
+  }
+ },
+ "labelIds": [
+  "CHAT"
+ ]
+}
+
+--batch_endW4uAcPQU_AAMiKCgyOAE
+Content-Type: application/http
+
+HTTP/1.1 200 OK
+ETag: "SJIjOPuAzi7meWvLIr4rJgaI0K4/6kdxeK38xZwSXEi1T6aPPuH1XoE"
+Content-Type: application/json; charset=UTF-8
+Date: Wed, 05 Oct 2016 11:03:49 GMT
+Expires: Wed, 05 Oct 2016 11:03:49 GMT
+Cache-Control: private, max-age=0
+Content-Length: 560
+
+{
+ "sizeEstimate": 100,
+ "payload": {
+  "mimeType": "text/html",
+  "body": {
+   "size": 84,
+   "data": "RXQgcGxhY2VhdCB2ZW5pYW0gcXVpZGVtIGlsbHVtLiBBbWV0IGFtZXQgdmVuaWFtIGF1dGVtIGFsaXF1YW0u"
+  },
+  "filename": "",
+  "headers": [
+   {
+    "name": "From",
+    "value": "James Klein <eholland@wu-henry.org>"
+   }
+  ],
+  "partId": ""
+ },
+ "threadId": "157711232f17ad9a",
+ "labelIds": [
+  "CHAT"
+ ],
+ "historyId": "13124158",
+ "internalDate": "1475072917161",
+ "id": "15771327ea9b6420",
+ "snippet": "Et placeat veniam quidem illum. Amet amet veniam autem aliquam."
+}
+
+--batch_endW4uAcPQU_AAMiKCgyOAE
+Content-Type: application/http
+
+HTTP/1.1 200 OK
+ETag: "SJIjOPuAzi7meWvLIr4rJgaI0K4/1W_k5MUN8eBATy6DEukuDSnqBt0"
+Content-Type: application/json; charset=UTF-8
+Date: Wed, 05 Oct 2016 11:03:49 GMT
+Expires: Wed, 05 Oct 2016 11:03:49 GMT
+Cache-Control: private, max-age=0
+Content-Length: 517
+
+{
+ "sizeEstimate": 100,
+ "labelIds": [
+  "CHAT"
+ ],
+ "payload": {
+  "partId": "",
+  "headers": [
+   {
+    "value": "Melissa Mason <alicia00@yahoo.com>",
+    "name": "From"
+   }
+  ],
+  "body": {
+   "data": "QXJjaGl0ZWN0byByZXB1ZGlhbmRhZSBkZXNlcnVudCBzaXQgb2ZmaWNpaXMu",
+   "size": 60
+  },
+  "filename": "",
+  "mimeType": "text/html"
+ },
+ "historyId": "13124149",
+ "snippet": "Architecto repudiandae deserunt sit officiis.",
+ "threadId": "157711232f17ad9a",
+ "internalDate": "1475072858840",
+ "id": "15771319ad8ae1f5"
+}
+
+--batch_endW4uAcPQU_AAMiKCgyOAE
+Content-Type: application/http
+
+HTTP/1.1 200 OK
+ETag: "SJIjOPuAzi7meWvLIr4rJgaI0K4/ufvvspHP5eHjaFzrYCEFZmRJa4o"
+Content-Type: application/json; charset=UTF-8
+Date: Wed, 05 Oct 2016 11:03:49 GMT
+Expires: Wed, 05 Oct 2016 11:03:49 GMT
+Cache-Control: private, max-age=0
+Content-Length: 551
+
+{
+ "labelIds": [
+  "CHAT"
+ ],
+ "historyId": "13124140",
+ "snippet": "Quod quaerat similique alias vitae cumque dolorum deserunt.",
+ "id": "15771316fac5fb30",
+ "threadId": "157711232f17ad9a",
+ "payload": {
+  "mimeType": "text/html",
+  "headers": [
+   {
+    "value": "Melissa Mason <alicia00@yahoo.com>",
+    "name": "From"
+   }
+  ],
+  "body": {
+   "size": 80,
+   "data": "UXVvZCBxdWFlcmF0IHNpbWlsaXF1ZSBhbGlhcyB2aXRhZSBjdW1xdWUgZG9sb3J1bSBkZXNlcnVudC4="
+  },
+  "partId": "",
+  "filename": ""
+ },
+ "internalDate": "1475072847788",
+ "sizeEstimate": 100
+}
+
+--batch_endW4uAcPQU_AAMiKCgyOAE
+Content-Type: application/http
+
+HTTP/1.1 200 OK
+ETag: "SJIjOPuAzi7meWvLIr4rJgaI0K4/IDRT5kH7DjB6c6OkmLLMywvVRWM"
+Content-Type: application/json; charset=UTF-8
+Date: Wed, 05 Oct 2016 11:03:49 GMT
+Expires: Wed, 05 Oct 2016 11:03:49 GMT
+Cache-Control: private, max-age=0
+Content-Length: 581
+
+{
+ "snippet": "Dolorum architecto exercitationem reiciendis veritatis tempora voluptas.",
+ "sizeEstimate": 100,
+ "historyId": "13124131",
+ "internalDate": "1475072824999",
+ "payload": {
+  "partId": "",
+  "mimeType": "text/html",
+  "headers": [
+   {
+    "name": "From",
+    "value": "James Klein <eholland@wu-henry.org>"
+   }
+  ],
+  "filename": "",
+  "body": {
+   "size": 96,
+   "data": "RG9sb3J1bSBhcmNoaXRlY3RvIGV4ZXJjaXRhdGlvbmVtIHJlaWNpZW5kaXMgdmVyaXRhdGlzIHRlbXBvcmEgdm9sdXB0YXMu"
+  }
+ },
+ "id": "157713116a7ccfc0",
+ "labelIds": [
+  "CHAT"
+ ],
+ "threadId": "157711232f17ad9a"
+}
+
+--batch_endW4uAcPQU_AAMiKCgyOAE
+Content-Type: application/http
+
+HTTP/1.1 200 OK
+ETag: "SJIjOPuAzi7meWvLIr4rJgaI0K4/jPI_g64RJnwtrVK5XtA3QQ8HScM"
+Content-Type: application/json; charset=UTF-8
+Date: Wed, 05 Oct 2016 11:03:49 GMT
+Expires: Wed, 05 Oct 2016 11:03:49 GMT
+Cache-Control: private, max-age=0
+Content-Length: 546
+
+{
+ "id": "157713108df48a01",
+ "labelIds": [
+  "CHAT"
+ ],
+ "internalDate": "1475072821471",
+ "sizeEstimate": 100,
+ "snippet": "Rem voluptatem veniam quae dolores placeat eum inventore.",
+ "historyId": "13124122",
+ "threadId": "157711232f17ad9a",
+ "payload": {
+  "body": {
+   "size": 76,
+   "data": "UmVtIHZvbHVwdGF0ZW0gdmVuaWFtIHF1YWUgZG9sb3JlcyBwbGFjZWF0IGV1bSBpbnZlbnRvcmUu"
+  },
+  "mimeType": "text/html",
+  "headers": [
+   {
+    "name": "From",
+    "value": "James Klein <eholland@wu-henry.org>"
+   }
+  ],
+  "filename": "",
+  "partId": ""
+ }
+}
+
+--batch_endW4uAcPQU_AAMiKCgyOAE
+Content-Type: application/http
+
+HTTP/1.1 200 OK
+ETag: "SJIjOPuAzi7meWvLIr4rJgaI0K4/TwaxaINODdIUonfjp4G4T4ANry8"
+Content-Type: application/json; charset=UTF-8
+Date: Wed, 05 Oct 2016 11:03:49 GMT
+Expires: Wed, 05 Oct 2016 11:03:49 GMT
+Cache-Control: private, max-age=0
+Content-Length: 531
+
+{
+ "threadId": "157711232f17ad9a",
+ "snippet": "Labore illum quaerat tempore molestias porro harum.",
+ "id": "157712f103f43360",
+ "labelIds": [
+  "CHAT"
+ ],
+ "payload": {
+  "body": {
+   "data": "TGFib3JlIGlsbHVtIHF1YWVyYXQgdGVtcG9yZSBtb2xlc3RpYXMgcG9ycm8gaGFydW0u",
+   "size": 68
+  },
+  "headers": [
+   {
+    "value": "Melissa Mason <alicia00@yahoo.com>",
+    "name": "From"
+   }
+  ],
+  "filename": "",
+  "partId": "",
+  "mimeType": "text/html"
+ },
+ "sizeEstimate": 100,
+ "internalDate": "1475072692287",
+ "historyId": "13124104"
+}
+
+--batch_endW4uAcPQU_AAMiKCgyOAE
+Content-Type: application/http
+
+HTTP/1.1 200 OK
+ETag: "SJIjOPuAzi7meWvLIr4rJgaI0K4/IO0IgDcVcVqVtxU0f9VaBCaeRj0"
+Content-Type: application/json; charset=UTF-8
+Date: Wed, 05 Oct 2016 11:03:49 GMT
+Expires: Wed, 05 Oct 2016 11:03:49 GMT
+Cache-Control: private, max-age=0
+Content-Length: 510
+
+{
+ "snippet": "Iure culpa vero nesciunt occaecati beatae.",
+ "labelIds": [
+  "CHAT"
+ ],
+ "payload": {
+  "mimeType": "text/html",
+  "partId": "",
+  "headers": [
+   {
+    "value": "Melissa Mason <alicia00@yahoo.com>",
+    "name": "From"
+   }
+  ],
+  "body": {
+   "data": "SXVyZSBjdWxwYSB2ZXJvIG5lc2NpdW50IG9jY2FlY2F0aSBiZWF0YWUu",
+   "size": 56
+  },
+  "filename": ""
+ },
+ "threadId": "157711232f17ad9a",
+ "historyId": "13124093",
+ "internalDate": "1475072688906",
+ "sizeEstimate": 100,
+ "id": "157712f030a0a515"
+}
+
+--batch_endW4uAcPQU_AAMiKCgyOAE
+Content-Type: application/http
+
+HTTP/1.1 200 OK
+ETag: "SJIjOPuAzi7meWvLIr4rJgaI0K4/EsjlI_qjI6PoD2GjJfQt-IQyET8"
+Content-Type: application/json; charset=UTF-8
+Date: Wed, 05 Oct 2016 11:03:49 GMT
+Expires: Wed, 05 Oct 2016 11:03:49 GMT
+Cache-Control: private, max-age=0
+Content-Length: 551
+
+{
+ "id": "157712ed87030624",
+ "snippet": "Veritatis est libero neque eligendi maiores reprehenderit.",
+ "internalDate": "1475072678000",
+ "labelIds": [
+  "CHAT"
+ ],
+ "sizeEstimate": 100,
+ "threadId": "157711232f17ad9a",
+ "payload": {
+  "headers": [
+   {
+    "value": "James Klein <eholland@wu-henry.org>",
+    "name": "From"
+   }
+  ],
+  "partId": "",
+  "filename": "",
+  "mimeType": "text/html",
+  "body": {
+   "data": "VmVyaXRhdGlzIGVzdCBsaWJlcm8gbmVxdWUgZWxpZ2VuZGkgbWFpb3JlcyByZXByZWhlbmRlcml0Lg==",
+   "size": 80
+  }
+ },
+ "historyId": "13124084"
+}
+
+--batch_endW4uAcPQU_AAMiKCgyOAE
+Content-Type: application/http
+
+HTTP/1.1 200 OK
+ETag: "SJIjOPuAzi7meWvLIr4rJgaI0K4/rKTj2QIs26IId_yhTEM4-A9TQog"
+Content-Type: application/json; charset=UTF-8
+Date: Wed, 05 Oct 2016 11:03:49 GMT
+Expires: Wed, 05 Oct 2016 11:03:49 GMT
+Cache-Control: private, max-age=0
+Content-Length: 509
+
+{
+ "id": "157712cb552e1f94",
+ "payload": {
+  "mimeType": "text/html",
+  "filename": "",
+  "partId": "",
+  "body": {
+   "data": "Q29ycnVwdGkgc2VkIG5lcXVlIGN1bSBpbnZlbnRvcmUgdGVtcG9yZS4=",
+   "size": 56
+  },
+  "headers": [
+   {
+    "value": "Melissa Mason <alicia00@yahoo.com>",
+    "name": "From"
+   }
+  ]
+ },
+ "internalDate": "1475072537938",
+ "sizeEstimate": 100,
+ "historyId": "13124061",
+ "labelIds": [
+  "CHAT"
+ ],
+ "threadId": "157711232f17ad9a",
+ "snippet": "Corrupti sed neque cum inventore tempore."
+}
+
+--batch_endW4uAcPQU_AAMiKCgyOAE
+Content-Type: application/http
+
+HTTP/1.1 200 OK
+ETag: "SJIjOPuAzi7meWvLIr4rJgaI0K4/e75LHnbDv9metQ4RZ7PBKSr8lYk"
+Content-Type: application/json; charset=UTF-8
+Date: Wed, 05 Oct 2016 11:03:49 GMT
+Expires: Wed, 05 Oct 2016 11:03:49 GMT
+Cache-Control: private, max-age=0
+Content-Length: 523
+
+{
+ "threadId": "157711232f17ad9a",
+ "historyId": "13124052",
+ "sizeEstimate": 100,
+ "internalDate": "1475072528965",
+ "snippet": "Dolor quia aliquam officiis dignissimos animi.",
+ "payload": {
+  "filename": "",
+  "body": {
+   "size": 64,
+   "data": "RG9sb3IgcXVpYSBhbGlxdWFtIG9mZmljaWlzIGRpZ25pc3NpbW9zIGFuaW1pLg=="
+  },
+  "headers": [
+   {
+    "name": "From",
+    "value": "James Klein <eholland@wu-henry.org>"
+   }
+  ],
+  "mimeType": "text/html",
+  "partId": ""
+ },
+ "labelIds": [
+  "CHAT"
+ ],
+ "id": "157712c924548dbe"
+}
+
+--batch_endW4uAcPQU_AAMiKCgyOAE
+Content-Type: application/http
+
+HTTP/1.1 200 OK
+ETag: "SJIjOPuAzi7meWvLIr4rJgaI0K4/vk-QfDCllsmo6bvwsldk5sAgCJI"
+Content-Type: application/json; charset=UTF-8
+Date: Wed, 05 Oct 2016 11:03:49 GMT
+Expires: Wed, 05 Oct 2016 11:03:49 GMT
+Cache-Control: private, max-age=0
+Content-Length: 536
+
+{
+ "payload": {
+  "headers": [
+   {
+    "value": "Melissa Mason <alicia00@yahoo.com>",
+    "name": "From"
+   }
+  ],
+  "mimeType": "text/html",
+  "filename": "",
+  "body": {
+   "data": "Q29ycG9yaXMgdmVuaWFtIGlsbG8gYWQgbm9zdHJ1bSBudW1xdWFtIG5pc2kgZG9sb3JlLg==",
+   "size": 72
+  },
+  "partId": ""
+ },
+ "labelIds": [
+  "CHAT"
+ ],
+ "id": "157712c292616f3b",
+ "snippet": "Corporis veniam illo ad nostrum numquam nisi dolore.",
+ "sizeEstimate": 100,
+ "historyId": "13124043",
+ "internalDate": "1475072502054",
+ "threadId": "157711232f17ad9a"
+}
+
+--batch_endW4uAcPQU_AAMiKCgyOAE
+Content-Type: application/http
+
+HTTP/1.1 200 OK
+ETag: "SJIjOPuAzi7meWvLIr4rJgaI0K4/UdZgJQ4wF2YuFnwPGrlk3NCnc-w"
+Content-Type: application/json; charset=UTF-8
+Date: Wed, 05 Oct 2016 11:03:49 GMT
+Expires: Wed, 05 Oct 2016 11:03:49 GMT
+Cache-Control: private, max-age=0
+Content-Length: 523
+
+{
+ "payload": {
+  "body": {
+   "data": "UXVhZSBpbnZlbnRvcmUgdGVtcG9yZSBtYWduaSBmdWdpYXQgY3VwaWRpdGF0ZS4=",
+   "size": 64
+  },
+  "filename": "",
+  "partId": "",
+  "mimeType": "text/html",
+  "headers": [
+   {
+    "name": "From",
+    "value": "Melissa Mason <alicia00@yahoo.com>"
+   }
+  ]
+ },
+ "id": "157712bfd8f603ca",
+ "threadId": "157711232f17ad9a",
+ "historyId": "13123967",
+ "labelIds": [
+  "CHAT"
+ ],
+ "snippet": "Quae inventore tempore magni fugiat cupiditate.",
+ "internalDate": "1475072490895",
+ "sizeEstimate": 100
+}
+
+--batch_endW4uAcPQU_AAMiKCgyOAE
+Content-Type: application/http
+
+HTTP/1.1 200 OK
+ETag: "SJIjOPuAzi7meWvLIr4rJgaI0K4/3D9lcBaZcn0kiongHD3JRbeLZ5M"
+Content-Type: application/json; charset=UTF-8
+Date: Wed, 05 Oct 2016 11:03:49 GMT
+Expires: Wed, 05 Oct 2016 11:03:49 GMT
+Cache-Control: private, max-age=0
+Content-Length: 545
+
+{
+ "snippet": "Illo omnis harum corporis repudiandae libero nobis iure.",
+ "internalDate": "1475072454370",
+ "labelIds": [
+  "CHAT"
+ ],
+ "sizeEstimate": 100,
+ "id": "157712b6ee2f4aa1",
+ "payload": {
+  "mimeType": "text/html",
+  "filename": "",
+  "body": {
+   "size": 76,
+   "data": "SWxsbyBvbW5pcyBoYXJ1bSBjb3Jwb3JpcyByZXB1ZGlhbmRhZSBsaWJlcm8gbm9iaXMgaXVyZS4="
+  },
+  "partId": "",
+  "headers": [
+   {
+    "name": "From",
+    "value": "James Klein <eholland@wu-henry.org>"
+   }
+  ]
+ },
+ "threadId": "157711232f17ad9a",
+ "historyId": "13123958"
+}
+
+--batch_endW4uAcPQU_AAMiKCgyOAE
+Content-Type: application/http
+
+HTTP/1.1 200 OK
+ETag: "SJIjOPuAzi7meWvLIr4rJgaI0K4/o3I9i4L9wT_C58qbir2C636rzBA"
+Content-Type: application/json; charset=UTF-8
+Date: Wed, 05 Oct 2016 11:03:49 GMT
+Expires: Wed, 05 Oct 2016 11:03:49 GMT
+Cache-Control: private, max-age=0
+Content-Length: 581
+
+{
+ "threadId": "157711232f17ad9a",
+ "internalDate": "1475072369284",
+ "payload": {
+  "partId": "",
+  "headers": [
+   {
+    "value": "James Klein <eholland@wu-henry.org>",
+    "name": "From"
+   }
+  ],
+  "filename": "",
+  "mimeType": "text/html",
+  "body": {
+   "size": 96,
+   "data": "TGliZXJvIHZvbHVwdGF0ZXMgYWRpcGlzY2kgcXVvLiBGdWdhIGl0YXF1ZSBjb21tb2RpIGV4cGVkaXRhIHRlbXBvcmlidXMu"
+  }
+ },
+ "snippet": "Libero voluptates adipisci quo. Fuga itaque commodi expedita temporibus.",
+ "id": "157712a2284996a7",
+ "labelIds": [
+  "CHAT"
+ ],
+ "historyId": "13123922",
+ "sizeEstimate": 100
+}
+
+--batch_endW4uAcPQU_AAMiKCgyOAE
+Content-Type: application/http
+
+HTTP/1.1 200 OK
+ETag: "SJIjOPuAzi7meWvLIr4rJgaI0K4/PPaIK5dXbgUe-xSST7CUvsgsSkc"
+Content-Type: application/json; charset=UTF-8
+Date: Wed, 05 Oct 2016 11:03:49 GMT
+Expires: Wed, 05 Oct 2016 11:03:49 GMT
+Cache-Control: private, max-age=0
+Content-Length: 543
+
+{
+ "payload": {
+  "body": {
+   "size": 76,
+   "data": "TWF4aW1lIHZlbGl0IGV4IG1heGltZSBkaWduaXNzaW1vcyBwZXJmZXJlbmRpcyBkZWJpdGlzLg=="
+  },
+  "headers": [
+   {
+    "name": "From",
+    "value": "Melissa Mason <alicia00@yahoo.com>"
+   }
+  ],
+  "partId": "",
+  "mimeType": "text/html",
+  "filename": ""
+ },
+ "historyId": "13123913",
+ "internalDate": "1475072352146",
+ "id": "1577129df927c02d",
+ "sizeEstimate": 100,
+ "threadId": "157711232f17ad9a",
+ "snippet": "Maxime velit ex maxime dignissimos perferendis debitis.",
+ "labelIds": [
+  "CHAT"
+ ]
+}
+
+--batch_endW4uAcPQU_AAMiKCgyOAE
+Content-Type: application/http
+
+HTTP/1.1 200 OK
+ETag: "SJIjOPuAzi7meWvLIr4rJgaI0K4/Tt_d9k_iTzaKAGaVCgnvCIzt8W8"
+Content-Type: application/json; charset=UTF-8
+Date: Wed, 05 Oct 2016 11:03:49 GMT
+Expires: Wed, 05 Oct 2016 11:03:49 GMT
+Cache-Control: private, max-age=0
+Content-Length: 538
+
+{
+ "snippet": "Quidem sed dolores nostrum nostrum sapiente molestias.",
+ "internalDate": "1475072347714",
+ "id": "1577129ce427f365",
+ "sizeEstimate": 100,
+ "labelIds": [
+  "CHAT"
+ ],
+ "payload": {
+  "body": {
+   "data": "UXVpZGVtIHNlZCBkb2xvcmVzIG5vc3RydW0gbm9zdHJ1bSBzYXBpZW50ZSBtb2xlc3RpYXMu",
+   "size": 72
+  },
+  "mimeType": "text/html",
+  "filename": "",
+  "headers": [
+   {
+    "name": "From",
+    "value": "Melissa Mason <alicia00@yahoo.com>"
+   }
+  ],
+  "partId": ""
+ },
+ "historyId": "13123904",
+ "threadId": "157711232f17ad9a"
+}
+
+--batch_endW4uAcPQU_AAMiKCgyOAE
+Content-Type: application/http
+
+HTTP/1.1 200 OK
+ETag: "SJIjOPuAzi7meWvLIr4rJgaI0K4/OBngBRWHCogGVsBa3VULjIP4x48"
+Content-Type: application/json; charset=UTF-8
+Date: Wed, 05 Oct 2016 11:03:49 GMT
+Expires: Wed, 05 Oct 2016 11:03:49 GMT
+Cache-Control: private, max-age=0
+Content-Length: 522
+
+{
+ "internalDate": "1475072344825",
+ "historyId": "13123895",
+ "threadId": "157711232f17ad9a",
+ "labelIds": [
+  "CHAT"
+ ],
+ "payload": {
+  "headers": [
+   {
+    "name": "From",
+    "value": "Melissa Mason <alicia00@yahoo.com>"
+   }
+  ],
+  "partId": "",
+  "body": {
+   "size": 64,
+   "data": "UXVhbSBjb25zZXF1YXR1ciBpbXBlZGl0IGVzdCBpbGx1bSB0ZW1wb3JpYnVzLg=="
+  },
+  "mimeType": "text/html",
+  "filename": ""
+ },
+ "id": "1577129c2f91fa39",
+ "sizeEstimate": 100,
+ "snippet": "Quam consequatur impedit est illum temporibus."
+}
+
+--batch_endW4uAcPQU_AAMiKCgyOAE
+Content-Type: application/http
+
+HTTP/1.1 200 OK
+ETag: "SJIjOPuAzi7meWvLIr4rJgaI0K4/RRZw3bSHBHPUwScu3DFpd-GZ8l4"
+Content-Type: application/json; charset=UTF-8
+Date: Wed, 05 Oct 2016 11:03:49 GMT
+Expires: Wed, 05 Oct 2016 11:03:49 GMT
+Cache-Control: private, max-age=0
+Content-Length: 552
+
+{
+ "historyId": "13123886",
+ "labelIds": [
+  "CHAT"
+ ],
+ "sizeEstimate": 100,
+ "id": "1577129b33e45ae2",
+ "internalDate": "1475072340798",
+ "payload": {
+  "filename": "",
+  "partId": "",
+  "headers": [
+   {
+    "name": "From",
+    "value": "James Klein <eholland@wu-henry.org>"
+   }
+  ],
+  "body": {
+   "data": "QmxhbmRpdGlpcyBvcHRpbyBhbWV0IGlwc2EgdmVsLiBEZWJpdGlzIHJlcnVtIGltcGVkaXQgaWxsby4=",
+   "size": 80
+  },
+  "mimeType": "text/html"
+ },
+ "snippet": "Blanditiis optio amet ipsa vel. Debitis rerum impedit illo.",
+ "threadId": "157711232f17ad9a"
+}
+
+--batch_endW4uAcPQU_AAMiKCgyOAE
+Content-Type: application/http
+
+HTTP/1.1 200 OK
+ETag: "SJIjOPuAzi7meWvLIr4rJgaI0K4/o4mmhAc6pwNO99kkP32NsdzOOug"
+Content-Type: application/json; charset=UTF-8
+Date: Wed, 05 Oct 2016 11:03:49 GMT
+Expires: Wed, 05 Oct 2016 11:03:49 GMT
+Cache-Control: private, max-age=0
+Content-Length: 509
+
+{
+ "internalDate": "1475072234568",
+ "id": "15771281448fc9bb",
+ "threadId": "157711232f17ad9a",
+ "payload": {
+  "mimeType": "text/html",
+  "partId": "",
+  "body": {
+   "size": 56,
+   "data": "Q29ycG9yaXMgcXVhZXJhdCBjdWxwYSBpZCBhZCBpcHNhIGVhcnVtLg=="
+  },
+  "headers": [
+   {
+    "name": "From",
+    "value": "James Klein <eholland@wu-henry.org>"
+   }
+  ],
+  "filename": ""
+ },
+ "historyId": "13123854",
+ "snippet": "Corporis quaerat culpa id ad ipsa earum.",
+ "labelIds": [
+  "CHAT"
+ ],
+ "sizeEstimate": 100
+}
+
+--batch_endW4uAcPQU_AAMiKCgyOAE
+Content-Type: application/http
+
+HTTP/1.1 200 OK
+ETag: "SJIjOPuAzi7meWvLIr4rJgaI0K4/__UpNHUN7SgKhJVThCaCwiu7JRo"
+Content-Type: application/json; charset=UTF-8
+Date: Wed, 05 Oct 2016 11:03:49 GMT
+Expires: Wed, 05 Oct 2016 11:03:49 GMT
+Cache-Control: private, max-age=0
+Content-Length: 558
+
+{
+ "labelIds": [
+  "CHAT"
+ ],
+ "payload": {
+  "body": {
+   "size": 84,
+   "data": "RG9sb3JpYnVzIGFyY2hpdGVjdG8gZGVsZW5pdGkgcXVvcyBtb2xsaXRpYSBxdWlhIGV4IG1vbGVzdGlhZS4="
+  },
+  "mimeType": "text/html",
+  "headers": [
+   {
+    "name": "From",
+    "value": "Melissa Mason <alicia00@yahoo.com>"
+   }
+  ],
+  "filename": "",
+  "partId": ""
+ },
+ "sizeEstimate": 100,
+ "historyId": "13123845",
+ "id": "1577127e75e29e75",
+ "internalDate": "1475072223070",
+ "snippet": "Doloribus architecto deleniti quos mollitia quia ex molestiae.",
+ "threadId": "157711232f17ad9a"
+}
+
+--batch_endW4uAcPQU_AAMiKCgyOAE
+Content-Type: application/http
+
+HTTP/1.1 200 OK
+ETag: "SJIjOPuAzi7meWvLIr4rJgaI0K4/DmKne0rV16_fwAUhJIaG1pFGn2Q"
+Content-Type: application/json; charset=UTF-8
+Date: Wed, 05 Oct 2016 11:03:49 GMT
+Expires: Wed, 05 Oct 2016 11:03:49 GMT
+Cache-Control: private, max-age=0
+Content-Length: 496
+
+{
+ "historyId": "13123836",
+ "snippet": "Ipsa illum necessitatibus expedita.",
+ "id": "1577127614a9ea30",
+ "internalDate": "1475072188746",
+ "payload": {
+  "filename": "",
+  "mimeType": "text/html",
+  "partId": "",
+  "body": {
+   "size": 48,
+   "data": "SXBzYSBpbGx1bSBuZWNlc3NpdGF0aWJ1cyBleHBlZGl0YS4="
+  },
+  "headers": [
+   {
+    "value": "James Klein <eholland@wu-henry.org>",
+    "name": "From"
+   }
+  ]
+ },
+ "labelIds": [
+  "CHAT"
+ ],
+ "threadId": "157711232f17ad9a",
+ "sizeEstimate": 100
+}
+
+--batch_endW4uAcPQU_AAMiKCgyOAE
+Content-Type: application/http
+
+HTTP/1.1 200 OK
+ETag: "SJIjOPuAzi7meWvLIr4rJgaI0K4/RZYHzmnRmYvuvMxX9kIUX2JYkQE"
+Content-Type: application/json; charset=UTF-8
+Date: Wed, 05 Oct 2016 11:03:49 GMT
+Expires: Wed, 05 Oct 2016 11:03:49 GMT
+Cache-Control: private, max-age=0
+Content-Length: 538
+
+{
+ "payload": {
+  "body": {
+   "size": 72,
+   "data": "UXVvcyB2b2x1cHRhdHVtIHNpdCBpbnZlbnRvcmUgYWNjdXNhbXVzIGFsaXF1YW0gY3VscGEu"
+  },
+  "partId": "",
+  "mimeType": "text/html",
+  "headers": [
+   {
+    "name": "From",
+    "value": "Melissa Mason <alicia00@yahoo.com>"
+   }
+  ],
+  "filename": ""
+ },
+ "id": "1577126f2d6d428e",
+ "threadId": "157711232f17ad9a",
+ "internalDate": "1475072160470",
+ "labelIds": [
+  "CHAT"
+ ],
+ "sizeEstimate": 100,
+ "historyId": "13123818",
+ "snippet": "Quos voluptatum sit inventore accusamus aliquam culpa."
+}
+
+--batch_endW4uAcPQU_AAMiKCgyOAE
+Content-Type: application/http
+
+HTTP/1.1 200 OK
+ETag: "SJIjOPuAzi7meWvLIr4rJgaI0K4/F-c68bS-KieOt8IdJDj86BB3Lf0"
+Content-Type: application/json; charset=UTF-8
+Date: Wed, 05 Oct 2016 11:03:49 GMT
+Expires: Wed, 05 Oct 2016 11:03:49 GMT
+Cache-Control: private, max-age=0
+Content-Length: 546
+
+{
+ "sizeEstimate": 100,
+ "labelIds": [
+  "CHAT"
+ ],
+ "historyId": "13123800",
+ "threadId": "157711232f17ad9a",
+ "internalDate": "1475072113042",
+ "id": "157712639927a6e1",
+ "payload": {
+  "filename": "",
+  "body": {
+   "data": "UXVpcyBsYWJvcmUgc2ltaWxpcXVlIGlsbG8gcGxhY2VhdCB0ZW5ldHVyIG1vbGVzdGlhcyByZW0u",
+   "size": 76
+  },
+  "mimeType": "text/html",
+  "partId": "",
+  "headers": [
+   {
+    "name": "From",
+    "value": "James Klein <eholland@wu-henry.org>"
+   }
+  ]
+ },
+ "snippet": "Quis labore similique illo placeat tenetur molestias rem."
+}
+
+--batch_endW4uAcPQU_AAMiKCgyOAE
+Content-Type: application/http
+
+HTTP/1.1 200 OK
+ETag: "SJIjOPuAzi7meWvLIr4rJgaI0K4/PB_jo5dY3zB3Uo7HQFZpLjUn2Gk"
+Content-Type: application/json; charset=UTF-8
+Date: Wed, 05 Oct 2016 11:03:49 GMT
+Expires: Wed, 05 Oct 2016 11:03:49 GMT
+Cache-Control: private, max-age=0
+Content-Length: 545
+
+{
+ "id": "1577125d8f4a5d74",
+ "payload": {
+  "filename": "",
+  "partId": "",
+  "mimeType": "text/html",
+  "headers": [
+   {
+    "name": "From",
+    "value": "Melissa Mason <alicia00@yahoo.com>"
+   }
+  ],
+  "body": {
+   "data": "TmloaWwgb2RpdCBuZXNjaXVudCBoYXJ1bSBoaWMgZXggcHJhZXNlbnRpdW0gY29uc2VjdGV0dXIu",
+   "size": 76
+  }
+ },
+ "internalDate": "1475072088308",
+ "labelIds": [
+  "CHAT"
+ ],
+ "snippet": "Nihil odit nesciunt harum hic ex praesentium consectetur.",
+ "threadId": "157711232f17ad9a",
+ "sizeEstimate": 100,
+ "historyId": "13123791"
+}
+
+--batch_endW4uAcPQU_AAMiKCgyOAE--
