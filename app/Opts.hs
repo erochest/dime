@@ -55,6 +55,10 @@ inputFileOpt :: Parser FilePath
 inputFileOpt = strOption (  short 'i' <> long "input" <> metavar "FILENAME"
                          <> help "A file name to read the input from.")
 
+outputFileOpt :: Parser FilePath
+outputFileOpt = strOption (  short 'o' <> long "output" <> metavar "FILENAME"
+                          <> help "A file name to write the output to.")
+
 serviceOpt :: Parser Service
 serviceOpt = option (parse . map toLower =<< str)
                     (  short 's' <> long "service" <> metavar "SERVICE_NAME"
@@ -85,6 +89,9 @@ migrateOpts = Migrate <$> dbFileOpt <*> inputFileOpt <*> serviceOpt
 updateOpts :: Parser Actions
 updateOpts = Update <$> dbFileOpt <*> serviceOpt
 
+archiveOpts :: Parser Actions
+archiveOpts = Archive <$> dbFileOpt <*> outputFileOpt
+
 -- * Bringing it all together
 
 opts' :: Parser Actions
@@ -99,6 +106,9 @@ opts' = subparser
       <> command "update"  (info (helper <*> updateOpts)
                             (progDesc "Update the database with new data \
                                       \ downloaded from the stream."))
+      <> command "archive" (info (helper <*> archiveOpts)
+                            (progDesc "Archive the database's contents\
+                                      \ into a JSON file."))
       )
 
 opts :: ParserInfo Actions

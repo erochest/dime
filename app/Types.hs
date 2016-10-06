@@ -8,7 +8,10 @@ import           Dialogue.Types
 
 
 data Actions
-    = Init    { initDbFile :: !FilePath
+    = Archive { archiveDbFile :: !FilePath
+              , archiveOutput :: !FilePath
+              }
+    | Init    { initDbFile :: !FilePath
               }
     | Journal { journalDbFile :: !FilePath
               , journalDate   :: !(Maybe UTCTime)
@@ -21,6 +24,5 @@ data Actions
     | Update  { updateDbFile  :: !FilePath
               , updateStream  :: !Service
               }
-    -- | Archive
     -- | Publish
     deriving (Show, Eq)

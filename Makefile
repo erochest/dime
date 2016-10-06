@@ -6,7 +6,7 @@ RUN=stack exec -- dialogue
 DB=dialogue.sqlite
 
 run: build
-	$(RUN) update --help
+	$(RUN) archive --help
 
 init: build
 	$(RUN) init --db-file $(DB)
@@ -17,7 +17,7 @@ journal: build
 migrate: build
 	$(RUN) migrate --db-file $(DB) --service twitter --input `make last-archive`
 
-update: build adium google note twitter
+update: build adium google note twitter archive
 
 adium: build
 	$(RUN) update --db-file $(DB) --service adium
@@ -30,6 +30,9 @@ note: build
 
 twitter: build
 	$(RUN) update --db-file $(DB) --service twitter
+
+archive: build
+	$(RUN) archive --db-file $(DB) --output tmp/archive-`timestamp`.json
 
 archivedb:
 	cp dialogue.sqlite tmp/dialogue.sqlite-`timestamp`
@@ -83,10 +86,10 @@ bench:
 	stack bench $(BUILD_FLAGS)
 
 watch:
-	stack build --file-watch --pedantic --fast --exec 'make google'
+	stack build --file-watch --pedantic --fast --exec 'make run'
 
 watch-test:
-	stack test --file-watch --pedantic --test-arguments "-m Google"
+	stack test --file-watch --pedantic # --test-arguments "-m Google"
 
 restart: distclean build
 
