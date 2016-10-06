@@ -364,7 +364,6 @@ downloadGoogleMessages gs = do
         pages :: Options -> Maybe T.Text
               -> Producer (ResourceT Dialogue) MessageShort
         pages o p = do
-            F.print "get page {}" $ Only p
             let o' = maybe o (flip (set (param "pageToken")) o . pure) p
             ml <- lift . lift . asJSON' =<< liftIO (getWith o' messagesUrl)
             case ml ^. messagesMessages of
