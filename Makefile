@@ -36,12 +36,18 @@ archive: build
 
 stats: build
 	$(RUN) stats --db-file $(DB) --output tmp/stats-`timestamp`.json
+	jq -r '.[] | [.year, .month, .adium.primary.count, .adium.secondary.count, .google.primary.count, .google.secondary.count, .twitter.primary.count, .twitter.secondary.count] | @csv' \
+		`make last-stats` > tmp/stats-`timestamp`.csv
+
 
 archivedb:
 	cp dialogue.sqlite tmp/dialogue.sqlite-`timestamp`
 
 last-archive:
 	@ls -1 tmp/archive/*.json | tail -1
+
+last-stats:
+	@ls -1 tmp/stats-*.json | tail -1
 
 docs:
 	stack haddock
