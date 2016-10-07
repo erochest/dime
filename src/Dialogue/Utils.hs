@@ -9,9 +9,11 @@ import           Control.Monad
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Reader
 import           Control.Monad.Trans.Resource
+import qualified Data.Aeson.Types             as AT
 import           Data.Bifunctor
 import           Data.ByteString              (ByteString)
 import qualified Data.ByteString.Char8        as C8
+import           Data.Char                    (toLower)
 import           Data.Foldable
 import           Data.Monoid
 import qualified Data.Sequence                as S
@@ -103,3 +105,11 @@ decimalE t = do
     if T.null r
         then Right x
         else Left "Trailing text while parsing a number."
+
+prefixOptions :: Int -> AT.Options
+prefixOptions n = AT.defaultOptions
+                { AT.fieldLabelModifier = lowerFirst . drop n
+                }
+    where
+        lowerFirst []     = []
+        lowerFirst (x:xs) = toLower x : xs

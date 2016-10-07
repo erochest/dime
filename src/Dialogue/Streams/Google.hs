@@ -23,14 +23,12 @@ import           Control.Lens
 import           Control.Monad
 import           Data.Aeson
 import           Data.Aeson.Lens
-import           Data.Aeson.Types                      hiding (Options)
 import qualified Data.Aeson.Types                      as AT
 import           Data.Bifunctor
 import           Data.ByteString                       (ByteString)
 import qualified Data.ByteString                       as B
 import qualified Data.ByteString.Char8                 as C8
 import qualified Data.ByteString.Lazy.Char8            as L8
-import           Data.Char                             (toLower)
 import           Data.Data
 import           Data.Foldable
 import qualified Data.HashMap.Strict                   as M
@@ -88,12 +86,7 @@ $(makeClassy ''GoogleStream)
 $(makeFields ''GoogleStream)
 
 googleOptions :: Int -> AT.Options
-googleOptions n = defaultOptions
-                { fieldLabelModifier = lowerFirst . drop n
-                }
-    where
-        lowerFirst []     = []
-        lowerFirst (x:xs) = toLower x : xs
+googleOptions = prefixOptions
 
 data Header
     = Header

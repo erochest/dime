@@ -17,6 +17,7 @@ library
                      , Dialogue.Actions.Init
                      , Dialogue.Actions.Journal
                      , Dialogue.Actions.Migrate
+                     , Dialogue.Actions.Stats
                      , Dialogue.Actions.Update
                      , Dialogue.Fields
                      , Dialogue.Handles
@@ -30,6 +31,7 @@ library
                      , Dialogue.Types
                      , Dialogue.Types.Archive
                      , Dialogue.Types.Dialogue
+                     , Dialogue.Types.Stats
                      , Dialogue.Utils
   -- other-modules:
   -- other-extensions:
@@ -48,6 +50,7 @@ library
                      , errors
                      , exceptions
                      , groom
+                     , hashable
                      , hoauth2
                      , http-client
                      , http-conduit

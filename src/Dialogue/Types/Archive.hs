@@ -9,12 +9,12 @@ module Dialogue.Types.Archive where
 import           Control.Lens
 import           Data.Aeson
 import           Data.Aeson.Types
-import           Data.Char
 import           Data.Data
 import           Database.Persist
 import           GHC.Generics
 
 import           Dialogue.Models
+import           Dialogue.Utils
 
 
 data Archive
@@ -31,12 +31,7 @@ data Archive
 $(makeClassy ''Archive)
 
 archiveOptions :: Options
-archiveOptions = defaultOptions
-               { fieldLabelModifier = lowerFirst . drop 8
-               }
-    where
-        lowerFirst []     = []
-        lowerFirst (x:xs) = toLower x : xs
+archiveOptions = prefixOptions 8
 
 instance ToJSON Archive where
     toJSON     = genericToJSON     archiveOptions

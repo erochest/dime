@@ -89,6 +89,9 @@ migrateOpts = Migrate <$> dbFileOpt <*> inputFileOpt <*> serviceOpt
 updateOpts :: Parser Actions
 updateOpts = Update <$> dbFileOpt <*> serviceOpt
 
+statsOpts :: Parser Actions
+statsOpts = Stats <$> dbFileOpt <*> outputFileOpt
+
 archiveOpts :: Parser Actions
 archiveOpts = Archive <$> dbFileOpt <*> outputFileOpt
 
@@ -106,6 +109,8 @@ opts' = subparser
       <> command "update"  (info (helper <*> updateOpts)
                             (progDesc "Update the database with new data \
                                       \ downloaded from the stream."))
+      <> command "stats"   (info (helper <*> statsOpts)
+                            (progDesc "Dump out statistics by month."))
       <> command "archive" (info (helper <*> archiveOpts)
                             (progDesc "Archive the database's contents\
                                       \ into a JSON file."))

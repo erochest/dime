@@ -21,6 +21,9 @@ data Actions
               , migrateInput  :: !FilePath
               , migrateStream :: !Service
               }
+    | Stats   { statsDbFile :: !FilePath
+              , statsOutput :: !FilePath
+              }
     | Update  { updateDbFile  :: !FilePath
               , updateStream  :: !Service
               }

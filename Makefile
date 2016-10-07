@@ -6,7 +6,7 @@ RUN=stack exec -- dialogue
 DB=dialogue.sqlite
 
 run: build
-	$(RUN) archive --help
+	$(RUN) stats --help
 
 init: build
 	$(RUN) init --db-file $(DB)
@@ -33,6 +33,9 @@ twitter: build
 
 archive: build
 	$(RUN) archive --db-file $(DB) --output tmp/archive-`timestamp`.json
+
+stats: build
+	$(RUN) stats --db-file $(DB) --output tmp/stats-`timestamp`.json
 
 archivedb:
 	cp dialogue.sqlite tmp/dialogue.sqlite-`timestamp`
