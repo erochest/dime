@@ -127,7 +127,7 @@ getNewAdiumMessages (AdiumStream (Just _) adiumDir)= do
             .   filter ((== ".xml") . takeExtension . adD)
             .   map toAD
             .   concatMap (sequenceA . fmap sequenceA)
-            =<< mapM (over2 (over2 walkDirectory))
+            =<< mapM (over2 (over2 (liftIO . walkDirectory)))
             .   concatMap sequenceA
             =<< mapM (over2 (directoryHandles handles ((True,) . T.pack)))
                      ircDirs

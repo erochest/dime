@@ -70,11 +70,15 @@ foldUntilM p f x = do
         then return x
         else foldUntilM p f =<< f x
 
-getEntity :: forall record (m :: * -> *)
-          .  ( PersistStore (PersistEntityBackend record), PersistEntity record
-             , MonadIO m)
+getEntity :: forall backend (m :: * -> *) record
+          .  ( PersistEntityBackend record ~ BaseBackend record
+             , BaseBackend backend ~ BaseBackend record
+             , PersistEntity record
+             , PersistStoreRead backend
+             , MonadIO m
+             )
           => Key record
-          -> ReaderT (PersistEntityBackend record) m (Maybe (Entity record))
+          -> ReaderT backend m (Maybe (Entity record))
 getEntity k = fmap (Entity k) <$> get k
 
 toTM :: M.HashMap T.Text HandleId -> DirectMessage
@@ -215,9 +219,7 @@ downloadDMs ts updatedId = do
         in  (++) <$> fmap snd (foldUntilM (return . done) t (NotStarted, []))
                  <*> fmap snd (foldUntilM (return . done) f (NotStarted, []))
 
-walkHistory :: ( Monad m
-               , MonadResource m
-               , MonadIO m
+walkHistory :: ( MonadResource m
                , FromJSON a
                , HasMaxIdParam (APIRequest apiName [a])
                )

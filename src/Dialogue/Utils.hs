@@ -24,7 +24,6 @@ import           Data.Text.Read
 import           Database.Persist
 import           Debug.Trace
 import           System.Directory
-import           System.FilePath
 import           System.IO
 import           Text.Groom
 import           Web.Browser
@@ -64,11 +63,6 @@ over2 :: (Applicative f, Traversable (p c), Bifunctor p)
       => (b -> f a) -> p c b -> f (p c a)
 over2 = sequenceA ... second
 
-listDirectory :: MonadIO m => FilePath -> m [FilePath]
-listDirectory dirname =   fmap (dirname </>)
-                      .   filter ((/= ".") . take 1)
-                      <$> liftIO (getDirectoryContents dirname)
-
 partitionM :: Monad m => (a -> m Bool) -> [a] -> m ([a], [a])
 partitionM p (x:xs) = do
     (ts, fs) <- partitionM p xs
@@ -76,7 +70,7 @@ partitionM p (x:xs) = do
     return $ if r then (x:ts, fs) else (ts, x:fs)
 partitionM _ [] = return ([], [])
 
-walkDirectory :: MonadIO m => FilePath -> m [FilePath]
+walkDirectory :: FilePath -> IO [FilePath]
 walkDirectory dirname = toList <$> go dirname
     where
         go dn = do
@@ -87,7 +81,9 @@ walkDirectory dirname = toList <$> go dirname
 insertUniqueEntity :: ( MonadIO m
                       , PersistEntityBackend val ~ backend
                       , PersistUnique backend
-                      , PersistEntity val)
+                      , PersistEntity val
+                      , BaseBackend backend ~ backend
+                      )
                    => val -> ReaderT backend m (Maybe (Entity val))
 insertUniqueEntity v = fmap (`Entity` v) <$> insertUnique v
 

@@ -56,8 +56,8 @@ generateStats dbFile outputFile = runDialogueS' (T.pack dbFile) $ do
         $ L.sortBy (comparing (mcYear &&& mcMonth))
         $ statsToCounts profileIndex adiumIndex googleIndex twitterIndex
 
-getStats :: forall record . ToBackendKey SqlBackend record
-         => M.HashMap Int64 Int64
+getStats :: forall record
+         .  M.HashMap Int64 Int64
          -> (record -> HandleId)
          -> (record -> UTCTime)
          -> [Entity record]

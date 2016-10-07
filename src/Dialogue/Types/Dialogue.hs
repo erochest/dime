@@ -60,7 +60,7 @@ liftSql sql = runReaderT sql =<< view ddSqlBackend
 liftE :: Monad m => ExceptT e m a -> DialogueT e m a
 liftE = DialogueT . ExceptT . lift . lift . runExceptT
 
-hoistE :: (Exception e, Monad m) => Either e a -> DialogueT e m a
+hoistE :: Monad m => Either e a -> DialogueT e m a
 hoistE (Right x) = return x
 hoistE (Left  x) = liftE $ throwE x
 
@@ -134,7 +134,7 @@ runDialogueTest :: (MonadBaseControl IO m, MonadIO m)
 runDialogueTest fixture d =
     runStderrLoggingT $ runDialogueDB ":memory:" $ liftSql fixture >> d
 
-runDialogueL :: (Exception e, MonadBaseControl IO m, MonadIO m)
+runDialogueL :: (MonadBaseControl IO m, MonadIO m)
              => T.Text -> DialogueT e m a -> LoggingT (ExceptT e m) a
 runDialogueL sqliteFile d =
     LoggingT $ ExceptT . runLoggingT (runDialogueDB sqliteFile d)
