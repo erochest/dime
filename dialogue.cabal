@@ -11,12 +11,15 @@ maintainer:          erochest@gmail.com
 build-type:          Simple
 -- extra-source-files:
 cabal-version:       >=1.10
+data-files:            epub-files/style.css
+                     , epub-files/FontAwesome.otf
 
 library
   exposed-modules:     Dialogue.Actions.Archive
                      , Dialogue.Actions.Init
                      , Dialogue.Actions.Journal
                      , Dialogue.Actions.Migrate
+                     , Dialogue.Actions.Publish
                      , Dialogue.Actions.Stats
                      , Dialogue.Actions.Update
                      , Dialogue.Fields
@@ -31,9 +34,10 @@ library
                      , Dialogue.Types
                      , Dialogue.Types.Archive
                      , Dialogue.Types.Dialogue
+                     , Dialogue.Types.Publish
                      , Dialogue.Types.Stats
                      , Dialogue.Utils
-  -- other-modules:
+  other-modules:       Paths_dialogue
   -- other-extensions:
   build-depends:       base >=4.8 && <4.10
                      , aeson
@@ -61,6 +65,7 @@ library
                      , monad-logger
                      , mtl
                      , open-browser
+                     , pandoc
                      , persistent
                      , persistent-sqlite
                      , persistent-template

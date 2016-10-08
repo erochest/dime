@@ -6,7 +6,7 @@ RUN=stack exec -- dialogue
 DB=dialogue.sqlite
 
 run: build
-	$(RUN) stats --help
+	$(RUN) publish --help
 
 init: build
 	$(RUN) init --db-file $(DB)
@@ -38,6 +38,9 @@ stats: build
 	$(RUN) stats --db-file $(DB) --output tmp/stats-`timestamp`.json
 	jq -r '.[] | [.year, .month, .adium.primary.count, .adium.secondary.count, .google.primary.count, .google.secondary.count, .twitter.primary.count, .twitter.secondary.count] | @csv' \
 		`make last-stats` > tmp/stats-`timestamp`.csv
+
+publish: build
+	$(RUN) publish --db-file $(DB) --output tmp/epub3/
 
 
 archivedb:

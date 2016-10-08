@@ -21,11 +21,13 @@ data Actions
               , migrateInput  :: !FilePath
               , migrateStream :: !Service
               }
+    | Publish { publishDbFile :: !FilePath
+              , publishOutDir :: !FilePath
+              }
     | Stats   { statsDbFile :: !FilePath
               , statsOutput :: !FilePath
               }
     | Update  { updateDbFile  :: !FilePath
               , updateStream  :: !Service
               }
-    -- | Publish
     deriving (Show, Eq)

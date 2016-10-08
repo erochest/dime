@@ -5,6 +5,8 @@
 module Dialogue.Utils where
 
 
+import           Control.Arrow                ((&&&))
+import           Control.Lens                 (view, _1, _2)
 import           Control.Monad
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Reader
@@ -21,6 +23,7 @@ import qualified Data.Text                    as T
 import           Data.Text.Format
 import qualified Data.Text.Format             as F
 import           Data.Text.Read
+import           Data.Time
 import           Database.Persist
 import           Debug.Trace
 import           System.Directory
@@ -109,3 +112,6 @@ prefixOptions n = AT.defaultOptions
     where
         lowerFirst []     = []
         lowerFirst (x:xs) = toLower x : xs
+
+monthKey :: UTCTime -> (Integer, Int)
+monthKey = (view _1 &&& view _2) . toGregorian . utctDay

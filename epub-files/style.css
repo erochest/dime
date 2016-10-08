@@ -1,0 +1,34 @@
+
+@font-face {
+    font-family: font-awesome;
+    font-style: normal;
+    font-weight: normal;
+    src:url("fontawesome-webfont.ttf")
+}
+
+h1 {
+    font-style: sans-serif;
+    font-size: 1.1rem;
+}
+
+h2 {
+    font-style: sans-serif;
+    font-size: 1rem;
+}
+
+h3 {
+    font-style: serif;
+    font-size: 0.8rem;
+}
+
+.service {
+    font-family: "font-awesome";
+}
+
+p {
+    font-style: serif;
+}
+
+.secondary {
+    text-align: right;
+}

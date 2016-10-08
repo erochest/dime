@@ -59,6 +59,10 @@ outputFileOpt :: Parser FilePath
 outputFileOpt = strOption (  short 'o' <> long "output" <> metavar "FILENAME"
                           <> help "A file name to write the output to.")
 
+outputDirOpt :: Parser FilePath
+outputDirOpt = strOption (  short 'o' <> long "output" <> metavar "DIRNAME"
+                          <> help "A directory name to write the output to.")
+
 serviceOpt :: Parser Service
 serviceOpt = option (parse . map toLower =<< str)
                     (  short 's' <> long "service" <> metavar "SERVICE_NAME"
@@ -92,6 +96,9 @@ updateOpts = Update <$> dbFileOpt <*> serviceOpt
 statsOpts :: Parser Actions
 statsOpts = Stats <$> dbFileOpt <*> outputFileOpt
 
+publishOpts :: Parser Actions
+publishOpts = Publish <$> dbFileOpt <*> outputDirOpt
+
 archiveOpts :: Parser Actions
 archiveOpts = Archive <$> dbFileOpt <*> outputFileOpt
 
@@ -107,10 +114,13 @@ opts' = subparser
                             (progDesc "Import a data file from previous\
                                       \ iterations of this program."))
       <> command "update"  (info (helper <*> updateOpts)
-                            (progDesc "Update the database with new data \
+                            (progDesc "Update the database with new data\
                                       \ downloaded from the stream."))
       <> command "stats"   (info (helper <*> statsOpts)
                             (progDesc "Dump out statistics by month."))
+      <> command "publish" (info (helper <*> publishOpts)
+                            (progDesc "Write the Markdown and files to create\
+                                      \ an EPUB for this directory"))
       <> command "archive" (info (helper <*> archiveOpts)
                             (progDesc "Archive the database's contents\
                                       \ into a JSON file."))

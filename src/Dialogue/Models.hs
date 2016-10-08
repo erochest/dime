@@ -13,9 +13,13 @@
 module Dialogue.Models where
 
 
-import           Data.HashMap.Strict    (HashMap)
+import           Control.Arrow
+import qualified Data.HashMap.Strict    as M
+import           Data.Maybe             (listToMaybe)
 import           Data.Text              (Text)
+import qualified Data.Text              as T
 import           Data.Time
+import           Database.Persist
 import           Database.Persist.Quasi
 import           Database.Persist.TH
 
@@ -27,4 +31,10 @@ share [ mkPersist sqlSettings { mpsGenerateLenses = True }
       ]
     $(persistFileWith lowerCaseSettings "config/models")
 
-type HandleIndex = HashMap Text HandleId
+type HandleIndex = M.HashMap T.Text HandleId
+
+getProfile :: (Entity Profile -> Bool) -> [Entity Profile]
+           -> Maybe (ProfileId, T.Text)
+getProfile p = listToMaybe
+             . map (entityKey &&& (_profileNickname . entityVal))
+             . filter p
