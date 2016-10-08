@@ -10,11 +10,8 @@ module Dialogue.Actions.Publish where
 
 import           Control.Arrow           hiding (first)
 import           Control.Error
-import           Control.Exception.Safe
 import           Control.Lens            hiding ((:<), (<.>), (|>))
 import           Control.Monad.IO.Class
-import           Data.Bifunctor
-import qualified Data.ByteString.Lazy    as BL
 import           Data.Foldable
 import           Data.Function           (on)
 import qualified Data.HashMap.Strict     as M
@@ -33,7 +30,7 @@ import           Database.Persist
 import           Database.Persist.Sql
 import           System.Directory
 import           System.FilePath
-import           Text.Pandoc
+import           System.Process
 
 import           Dialogue.Fields
 import           Dialogue.Models
@@ -177,17 +174,13 @@ serviceClass TwitterService = "twitter"
 
 printEpub3 :: FilePath -> FilePath -> Dialogue ()
 printEpub3 mdFile epubFile = do
-    style <- liftIO $ readFile =<< getDataFileName "epub-files/style.css"
+    style <- liftIO $ getDataFileName "epub-files/style.css"
     font  <- liftIO $ getDataFileName "epub-files/FontAwesome.otf"
-    let ropts = def { readerSmart      = True
-                    , readerExtensions = pandocExtensions
-                    }
-        wopts = def { writerStandalone      = True
-                    , writerEpubVersion     = Just EPUB3
-                    , writerEpubStylesheet  = Just style
-                    , writerEpubFonts       = [font]
-                    , writerTOCDepth        = 1
-                    }
-    doc <-  hoistE . first toException . readMarkdown ropts
-        =<< liftIO (readFile mdFile)
-    liftIO $ BL.writeFile epubFile =<< writeEPUB wopts doc
+    liftIO $ callProcess "pandoc" [ "--smart"
+                                   , "--epub-stylesheet", style
+                                   , "--epub-embed-font", font
+                                   , "--epub-chapter-level", "1"
+                                   , "--to", "epub3"
+                                   , "--output", epubFile
+                                   , mdFile
+                                   ]

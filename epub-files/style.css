@@ -6,6 +6,24 @@
     src:url("fontawesome-webfont.ttf")
 }
 
+/* This defines styles and classes used in the book */
+body { margin: 5%; text-align: justify; font-size: medium; }
+code { font-family: monospace; }
+h1 { text-align: left; }
+h2 { text-align: left; }
+h3 { text-align: left; }
+h4 { text-align: left; }
+h5 { text-align: left; }
+h6 { text-align: left; }
+h1.title { }
+h2.author { }
+h3.date { }
+ol.toc { padding: 0; margin-left: 1em; }
+ol.toc li { list-style-type: none; margin: 0; padding: 0; }
+a.footnoteRef { vertical-align: super; }
+em, em em em, em em em em em { font-style: italic;}
+em em, em em em em { font-style: normal; }
+
 h1 {
     font-style: sans-serif;
     font-size: 1.1rem;
@@ -19,6 +37,7 @@ h2 {
 h3 {
     font-style: serif;
     font-size: 0.8rem;
+    color: gray;
 }
 
 .service {
@@ -27,6 +46,7 @@ h3 {
 
 p {
     font-style: serif;
+    font-size: 0.8rem;
 }
 
 .secondary {

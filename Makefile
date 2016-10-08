@@ -41,7 +41,7 @@ stats: build
 
 publish: build
 	$(RUN) publish --db-file $(DB) --output tmp/epub3/
-
+	epubcheck tmp/epub3/*.epub
 
 archivedb:
 	cp dialogue.sqlite tmp/dialogue.sqlite-`timestamp`

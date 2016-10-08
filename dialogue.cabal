@@ -65,11 +65,11 @@ library
                      , monad-logger
                      , mtl
                      , open-browser
-                     , pandoc
                      , persistent
                      , persistent-sqlite
                      , persistent-template
                      , placeholders
+                     , process
                      , resourcet
                      , safe-exceptions
                      , sandi
