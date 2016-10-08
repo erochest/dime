@@ -5,8 +5,8 @@ BUILD_FLAGS=--pedantic
 RUN=stack exec -- dialogue
 DB=dialogue.sqlite
 
-run: build
-	$(RUN) publish --help
+run: build archivedb update stats publish archive
+	cat `make last-archive` | xz > $(HOME)/Dropbox/dialogues/archive-`timestamp`.json.xz
 
 init: build
 	$(RUN) init --db-file $(DB)
@@ -98,7 +98,7 @@ bench:
 	stack bench $(BUILD_FLAGS)
 
 watch:
-	stack build --file-watch --pedantic --fast --exec 'make run'
+	stack build --file-watch --pedantic --fast
 
 watch-test:
 	stack test --file-watch --pedantic # --test-arguments "-m Google"
