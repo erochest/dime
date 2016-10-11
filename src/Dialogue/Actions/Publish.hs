@@ -182,6 +182,7 @@ printEpub3 mdFile epubFile = do
                                    , "--epub-stylesheet", style
                                    , "--epub-embed-font", font
                                    , "--epub-chapter-level", "1"
+                                   , "--from", "markdown+autolink_bare_uris"
                                    , "--to", "epub3"
                                    , "--output", epubFile
                                    , mdFile
