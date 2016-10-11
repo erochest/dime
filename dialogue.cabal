@@ -117,7 +117,8 @@ test-suite dialogue-specs
   ghc-options:         -threaded -rtsopts
   hs-source-dirs:      specs
   main-is:             Specs.hs
-  other-modules:         Dialogue.Stream.GoogleSpec
+  other-modules:         Dialogue.Actions.PublishSpec
+                       , Dialogue.Stream.GoogleSpec
                        , Dialogue.Stream.NoteSpec
   build-depends:         base
                        , dialogue

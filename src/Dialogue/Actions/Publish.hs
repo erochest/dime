@@ -125,10 +125,12 @@ groupBlocks :: NominalDiffTime -> [PublishBlock] -> [BlockGroup]
 groupBlocks dt (pb:pbs) =
     toList . uncurry (flip (|>)) $ foldl' step (single pb, mempty) pbs
     where
-        single p = BlockGroup (_pbDate p) (_pbDate p) $ Seq.singleton p
+        single p = let pbd = _pbDate p
+                   in  BlockGroup pbd pbd $ Seq.singleton p
 
         step p@(current, accum) b
-            | diffTime > dt = (single b, accum |> current)
+            | (diffTime >= dt) || (diffTime < -dt) =
+                            (single b, accum |> current)
             | otherwise = p & _1 . bgEndTime .~ _pbDate b
                             & _1 . bgBlocks  %~ (|> b)
             where
