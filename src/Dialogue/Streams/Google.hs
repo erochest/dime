@@ -12,14 +12,15 @@
 module Dialogue.Streams.Google where
 
 
-import qualified Codec.Binary.Base64                   as B64
+import qualified Codec.Binary.Base64Url                as B64
 import           Conduit
 import           Control.Applicative
 import           Control.Arrow                         ((&&&), (***))
 import           Control.Concurrent                    hiding (yield)
 import           Control.Error
 import           Control.Exception.Safe
-import           Control.Lens
+import qualified Control.Foldl                         as L
+import           Control.Lens                          hiding ((...))
 import           Control.Monad
 import           Data.Aeson
 import           Data.Aeson.Lens
@@ -31,6 +32,7 @@ import qualified Data.ByteString.Char8                 as C8
 import qualified Data.ByteString.Lazy.Char8            as L8
 import           Data.Data
 import           Data.Foldable
+import           Data.Hashable
 import qualified Data.HashMap.Strict                   as M
 import qualified Data.HashSet                          as S
 import           Data.List.Split
@@ -38,7 +40,7 @@ import           Data.Monoid
 import qualified Data.Text                             as T
 import           Data.Text.Encoding
 import           Data.Text.Format
-import qualified Data.Text.Format                      as F
+-- import qualified Data.Text.Format                      as F
 import qualified Data.Text.Lazy                        as TL
 import           Data.Time
 import           Data.Time.Clock.POSIX
@@ -65,10 +67,12 @@ import           Dialogue.Types.Dialogue
 import           Dialogue.Utils
 
 
-messagesPath, messagesUrl, meUrl, batchUrl :: String
+messagesPath, messagesUrl, threadsPath, threadsUrl, meUrl, batchUrl :: String
 
 messagesPath = "/gmail/v1/users/me/messages"
 messagesUrl  = "https://www.googleapis.com" <> messagesPath
+threadsPath  = "/gmail/v1/users/me/threads"
+threadsUrl   = "https://www.googleapis.com" <> threadsPath
 meUrl        = "https://www.googleapis.com/gmail/v1/users/me/profile"
 batchUrl     = "https://www.googleapis.com/batch"
 
@@ -188,6 +192,22 @@ instance ToJSON MessageList where
 instance FromJSON MessageList where
     parseJSON = genericParseJSON (googleOptions 9)
 
+data Thread
+    = Thread
+    { _threadId        :: !T.Text
+    , _threadSnippet   :: !(Maybe T.Text)
+    , _threadHistoryId :: !T.Text
+    , _threadMessages  :: !(Maybe [Message])
+    } deriving (Show, Eq, Data, Typeable, Generic)
+$(makeClassy ''Thread)
+
+instance ToJSON Thread where
+    toJSON     = genericToJSON     (googleOptions 7)
+    toEncoding = genericToEncoding (googleOptions 7)
+
+instance FromJSON Thread where
+    parseJSON = genericParseJSON (googleOptions 7)
+
 newtype MultipartMixed = MultiMixed { unMix :: [Part] }
                        deriving (Show, Typeable, Generic)
 $(makeLenses ''MultipartMixed)
@@ -292,48 +312,67 @@ lastGoogleUpdateID =
 
 downloadGoogleMessages :: GoogleStream -> Dialogue [Entity GoogleMessage]
 downloadGoogleMessages gs = do
-    oauth2   <-  googleOAuth
-    idx      <-  indexHandles GoogleService
-    seen     <-  liftSql
-             $   S.fromList
-             .   map (_googleMessageGoogleId . entityVal)
-             <$> selectList [] []
-    -- lastId   <-  lastGoogleUpdateID
-    m        <-  liftIO $ newManager tlsManagerSettings
-    token    <-  liftFetch $ fetchRefreshToken m oauth2 $ gs ^. googleRefresh
-    profiles <-  liftSql $ selectList [ ProfilePrimary  ==. False ] []
-    other    <-  hoistM (GoogleException "No conversant")
-             .   fmap (_handleHandle . entityVal)
-             =<< liftSql (selectFirst [ HandleService   ==. GoogleService
-                                      , HandleProfileId <-. map entityKey profiles
-                                      ] [])
-    let q    = TL.toStrict $ format "{{from:{} to:{}}}" (other, other)
-        opts = defaults
-             & manager            .~ Right m
-             & auth               ?~ oauth2Bearer (accessToken token)
-        optq = opts & param "q" .~ [q]
-                    & param "maxResults" .~ ["100"]
-    me       <-  hoistM (GoogleException "Invalid user profile")
-             .   preview (key "emailAddress" . _String)
-             =<< (asJSON' :: Response L8.ByteString -> Dialogue Value)
-             =<< liftIO (getWith opts meUrl)
+    idx       <-  indexHandles GoogleService
+    messages  <-  liftSql $ selectList [] []
+    profiles  <-  liftSql $ selectList [ ProfilePrimary  ==. False ] []
+    other     <-  hoistM (GoogleException "No conversant")
+              .   fmap (_handleHandle . entityVal)
+              =<< liftSql (selectFirst [ HandleService   ==. GoogleService
+                                       , HandleProfileId <-. map entityKey profiles
+                                       ] [])
+
+    oauth2    <-  googleOAuth
+    m         <-  liftIO $ newManager tlsManagerSettings
+    token     <-  liftFetch $ fetchRefreshToken m oauth2 $ gs ^. googleRefresh
+
+    let tSeen = L.fold (setOf (_googleMessageThreadId .  entityVal)) messages
+        q     = TL.toStrict $ format "{{from:{} to:{}}}" (other, other)
+        opts  = defaults
+              & manager  .~ Right m
+              & auth     ?~ oauth2Bearer (accessToken token)
+        optq  = opts & param "q" .~ [q]
+                     & param "maxResults" .~ ["100"]
+
+    me        <-  hoistM (GoogleException "Invalid user profile")
+              .   preview (key "emailAddress" . _String)
+              =<< (asJSON' :: Response L8.ByteString -> Dialogue Value)
+              =<< liftIO (getWith opts meUrl)
+
     -- TODO: catch errors and abort?
     -- TODO: remove watches and traces
     runResourceT
         $   pages optq Nothing
-        =$= mapC _messageShortId
-        =$= filterC (not . (`S.member` seen))
+        =$= mapC _messageShortThreadId
+        =$= setOfC id
+        =$= filterC (not . (`S.member` tSeen))
         =$= chunkC 50
         =$= iterMC      (liftIO . const (threadDelay 5000))
         =$= mapMC       ( lift
                         . batchGet opts
-                        . map (id &&& (TL.unpack . format "{}/{}" . (messagesPath,))))
+                        . map (id &&& (TL.unpack . format "{}/{}" . (threadsPath,))))
         =$= concatMapC  (view responseBody)
-        =$= mapMC       (lift . (asJSON' :: Response L8.ByteString -> Dialogue Message))
+        =$= mapMC       (lift . (asJSON' :: Response L8.ByteString -> Dialogue Thread))
+        =$= concatMapMC (lift . hoistM (GoogleException "Empty thread.") . _threadMessages)
         =$= concatMapC  (toGM idx (me, other))
         =$= concatMapMC (lift . liftSql . insertUniqueEntity)
         $$  sinkList
+
     where
+        {- markerC :: MonadIO m => String -> Conduit a m a -}
+        {- markerC x = iterMC (const $ liftIO $ Prelude.putStrLn x) -}
+
+        setOf :: (Eq b, Hashable b) => (a -> b) -> L.Fold a (S.HashSet b)
+        setOf f = L.Fold (flip (S.insert . f)) S.empty id
+
+        setOfC :: (Eq b, Hashable b, Monad m) => (a -> b) -> Conduit a m b
+        setOfC = go S.empty
+            where
+                go s f = do
+                    v <- await
+                    case v of
+                         Just v' -> go (S.insert (f v') s) f
+                         Nothing -> yieldMany $ toList s
+
         batchGet :: Options -> [(T.Text, String)] -> Dialogue (Response [Response L8.ByteString])
         batchGet o gets = do
             msg <- liftIO
@@ -343,8 +382,8 @@ downloadGoogleMessages gs = do
                        . uncurry partString
                        . second (("GET " <>) . (<> "\r\n"))
                        ) gets
-            let filename = TL.unpack $ F.format "multi-{}.txt" $ Only $ fst $ head gets
-            liftIO $ L8.writeFile filename $ msg ^. responseBody
+            -- let filename = TL.unpack $ F.format "multi-{}.txt" $ Only $ fst $ head gets
+            -- liftIO $ L8.writeFile filename $ msg ^. responseBody
             parseMulti msg
 
         chunkC :: Monad m => Int -> Conduit a m [a]
@@ -363,7 +402,6 @@ downloadGoogleMessages gs = do
                 [] -> return ()
                 ms -> do
                     yieldMany ms
-                    return ()
                     case ml ^. messagesNextPageToken of
                         pt@(Just _) -> pages o pt
                         Nothing     -> return ()
@@ -408,7 +446,7 @@ hdr :: T.Text -> Prism' Header Header
 hdr n = prism' id (\h -> if _headerName h == n then Just h else Nothing)
 
 decodeContent :: C8.ByteString -> Either SomeException T.Text
-decodeContent = (       (toException . GoogleException . decodeUtf8 . fst)
+decodeContent = (       (toException . GoogleException . T.pack . show)
                 `bimap` decodeUtf8)
               . B64.decode
 
@@ -417,19 +455,22 @@ decodeDate = (       (toException . GoogleException . T.pack)
              `bimap` (posixSecondsToUTCTime . (/1000) . realToFrac))
            . (decimalE :: T.Text -> Either String Integer)
 
-toGM :: HandleIndex -> (T.Text, T.Text) -> Message -> Maybe GoogleMessage
+toGM :: HandleIndex -> (T.Text, T.Text) -> Message -> Either SomeException GoogleMessage
 toGM idx users m = do
     let pl = m ^. messagePayload
-    (s, r)  <-  getUsers idx users $ pl ^.. payloadHeaders . _Just . traverse
-    time    <-  hush $ decodeDate $ m ^. messageInternalDate
-    content <-  pl ^? payloadBody . attachmentData . _Just . to encodeUtf8
+    (s, r)  <-  note (toException $ GoogleException "No users.")
+            $   getUsers idx users
+            $   pl ^.. payloadHeaders . _Just . traverse
+    time    <-  decodeDate $ m ^. messageInternalDate
+    content <-  note (toException $ GoogleException "No payload.")
+            $    pl ^? payloadBody . attachmentData . _Just . to encodeUtf8
             <|> (   preview (payloadBody . attachmentData . _Just . to encodeUtf8)
                 =<< listToMaybe . filter isTextPart
                 =<< pl ^. payloadParts
                 )
-    decoded <-  hush $ decodeContent content
+    decoded <-  decodeContent content
     return
-        $ GoogleMessage (m ^. messageId) time s r decoded
+        $ GoogleMessage (m ^. messageId) (m ^. messageThreadId) time s r decoded
         . decodeUtf8
         . L8.toStrict
         $ encode m

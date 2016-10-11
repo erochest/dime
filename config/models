@@ -35,6 +35,7 @@ AdiumMessage json
 
 GoogleMessage json
     googleId Text
+    threadId Text
     createdAt UTCTime
     senderId HandleId
     recipientId HandleId

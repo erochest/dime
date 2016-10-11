@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedLists   #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 
@@ -5,12 +6,12 @@ module Dialogue.Stream.GoogleSpec where
 
 
 import           Control.Error
+import           Control.Lens
 import qualified Data.ByteString.Lazy.Char8 as L8
+import           Data.Foldable
+import           Data.Text.Encoding
+import           Data.Time
 import           Network.Wreq
-import Control.Lens
-import Data.Text.Encoding
-import Data.Foldable
-import Data.Time
 
 import           Test.Hspec
 

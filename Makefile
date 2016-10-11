@@ -101,7 +101,7 @@ watch:
 	stack build --file-watch --pedantic --fast
 
 watch-test:
-	stack test --file-watch --pedantic # --test-arguments "-m Google"
+	stack test --file-watch --pedantic --test-arguments "-m Google"
 
 restart: distclean build
 
