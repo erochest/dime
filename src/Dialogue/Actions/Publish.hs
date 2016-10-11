@@ -140,7 +140,7 @@ groupBlocks _ [] = []
 
 renderGroup :: BlockGroup -> Builder
 renderGroup (Seq.viewl . _bgBlocks -> b :< bs) =
-        renderBlock True b <> foldMap (renderBlock False) bs
+        renderBlock True b <> foldMap (renderBlock False) bs <> "---\n\n"
 renderGroup _ = mempty
 
 renderBlock :: Bool -> PublishBlock -> Builder
