@@ -1,13 +1,13 @@
 name:                dialogue
 version:             0.0.0.0
 synopsis:            bundling dialogues
--- description:         aggregating and bundling dialogues into an epub
+description:         aggregating and bundling dialogues into an epub
 license:             Apache-2.0
 license-file:        LICENSE
 author:              Eric Rochester
 maintainer:          erochest@gmail.com
--- copyright:           2016 Eric Rochester
--- category:
+copyright:           2016 Eric Rochester
+category:            Utility
 build-type:          Simple
 -- extra-source-files:
 cabal-version:       >=1.10
@@ -51,6 +51,7 @@ library
                      , containers
                      , directory
                      , filepath
+                     , foldl
                      , errors
                      , exceptions
                      , groom
@@ -105,8 +106,7 @@ executable dialogue
                      , optparse-applicative
                      , errors
   hs-source-dirs:      app
-  ghc-options:         -O2
-                       -threaded
+  ghc-options:         -threaded
                        -rtsopts
                        "-with-rtsopts=-N"
                        -- -fprof-auto "-with-rtsopts=-N -p -s -h -i0.1"
@@ -121,9 +121,12 @@ test-suite dialogue-specs
                        , Dialogue.Stream.NoteSpec
   build-depends:         base
                        , dialogue
+                       , aeson
                        , bytestring
                        , errors
                        , lens
+                       , persistent
+                       , safe-exceptions
                        , text
                        , time
                        , wreq
@@ -134,8 +137,7 @@ test-suite dialogue-specs
 
 benchmark dialogue-bench
   type:                exitcode-stdio-1.0
-  ghc-options:         -O2
-                       -threaded
+  ghc-options:         -threaded
                        -rtsopts
   hs-source-dirs:      bench
   main-is:             Bench.hs
