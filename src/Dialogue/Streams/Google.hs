@@ -145,7 +145,7 @@ instance FromJSON Payload where
 data MessageShort
     = MessageShort
     { _messageShortId       :: !T.Text
-    , _messageShortThreadId :: !T.Text
+    , _messageShortThreadId :: !(Maybe T.Text)
     } deriving (Show, Eq, Data, Typeable, Generic)
 $(makeClassy ''MessageShort)
 
@@ -159,7 +159,7 @@ instance FromJSON MessageShort where
 data Message
     = Message
     { _messageId           :: !T.Text
-    , _messageThreadId     :: !T.Text
+    , _messageThreadId     :: !(Maybe T.Text)
     , _messageLabelIds     :: ![T.Text]
     , _messageSnippet      :: !(Maybe T.Text)
     , _messageHistoryId    :: !T.Text
@@ -325,7 +325,7 @@ downloadGoogleMessages gs = do
     m         <-  liftIO $ newManager tlsManagerSettings
     token     <-  liftFetch $ fetchRefreshToken m oauth2 $ gs ^. googleRefresh
 
-    let tSeen = L.fold (setOf (_googleMessageThreadId .  entityVal)) messages
+    let seen  = L.fold (setOf (_googleMessageGoogleId .  entityVal)) messages
         q     = TL.toStrict $ format "{{from:{} to:{}}}" (other, other)
         opts  = defaults
               & manager  .~ Right m
@@ -342,17 +342,17 @@ downloadGoogleMessages gs = do
     -- TODO: remove watches and traces
     runResourceT
         $   pages optq Nothing
-        =$= mapC _messageShortThreadId
-        =$= setOfC id
-        =$= filterC (not . (`S.member` tSeen))
+        =$= mapC _messageShortId
+        =$= filterC (not . (`S.member` seen))
         =$= chunkC 50
         =$= iterMC      (liftIO . const (threadDelay 5000))
         =$= mapMC       ( lift
                         . batchGet opts
-                        . map (id &&& (TL.unpack . format "{}/{}" . (threadsPath,))))
+                        . map (id &&& ( TL.unpack
+                                      . format "{}/{}"
+                                      . (messagesPath,))))
         =$= concatMapC  (view responseBody)
-        =$= mapMC       (lift . (asJSON' :: Response L8.ByteString -> Dialogue Thread))
-        =$= concatMapMC (lift . hoistM (GoogleException "Empty thread.") . _threadMessages)
+        =$= mapMC       (lift . jsonMsg)
         =$= concatMapC  (toGM idx (me, other))
         =$= concatMapMC (lift . liftSql . insertUniqueEntity)
         $$  sinkList
@@ -361,17 +361,11 @@ downloadGoogleMessages gs = do
         {- markerC :: MonadIO m => String -> Conduit a m a -}
         {- markerC x = iterMC (const $ liftIO $ Prelude.putStrLn x) -}
 
+        jsonMsg :: Response L8.ByteString -> Dialogue Message
+        jsonMsg = asJSON'
+
         setOf :: (Eq b, Hashable b) => (a -> b) -> L.Fold a (S.HashSet b)
         setOf f = L.Fold (flip (S.insert . f)) S.empty id
-
-        setOfC :: (Eq b, Hashable b, Monad m) => (a -> b) -> Conduit a m b
-        setOfC = go S.empty
-            where
-                go s f = do
-                    v <- await
-                    case v of
-                         Just v' -> go (S.insert (f v') s) f
-                         Nothing -> yieldMany $ toList s
 
         batchGet :: Options -> [(T.Text, String)] -> Dialogue (Response [Response L8.ByteString])
         batchGet o gets = do
@@ -445,6 +439,16 @@ asJSON' = hoistE . (toException `bimap` view responseBody) . asJSON
 hdr :: T.Text -> Prism' Header Header
 hdr n = prism' id (\h -> if _headerName h == n then Just h else Nothing)
 
+lookupHeader :: T.Text -> Message -> Maybe T.Text
+lookupHeader name =
+    preview ( messagePayload
+            . payloadHeaders
+            . _Just
+            . traverse
+            . hdr name
+            . headerValue
+            )
+
 decodeContent :: C8.ByteString -> Either SomeException T.Text
 decodeContent = (       (toException . GoogleException . T.pack . show)
                 `bimap` decodeUtf8)
@@ -470,7 +474,8 @@ toGM idx users m = do
                 )
     decoded <-  decodeContent content
     return
-        $ GoogleMessage (m ^. messageId) (m ^. messageThreadId) time s r decoded
+        $ GoogleMessage (m ^. messageId) (m ^. messageThreadId)
+                        time s r decoded
         . decodeUtf8
         . L8.toStrict
         $ encode m
@@ -478,7 +483,9 @@ toGM idx users m = do
         getUsers :: HandleIndex -> (T.Text, T.Text) -> [Header]
                  -> Maybe (HandleId, HandleId)
         getUsers i (u1, u2) hs = do
-            sender <- hs ^? traverse . hdr "From" . headerValue . to parseEmail . _2
+            sender <- hs ^? traverse
+                         .  hdr "From" . headerValue
+                         .  to parseEmail . _2
             let recipient = if sender == u1 then u2 else u1
             (,) <$> M.lookup sender i <*> M.lookup recipient i
 
@@ -497,8 +504,9 @@ toGM idx users m = do
         isTextPart = any isTextHeader . fold . _payloadHeaders
 
         isTextHeader :: Header -> Bool
-        isTextHeader Header{..} =  _headerName == "Content-Type"
-                                && _headerValue == "text/plain; charset=utf-8"
+        isTextHeader Header{..} =
+            _headerName  == "Content-Type"
+                && "text/plain" `T.isPrefixOf` _headerValue
 
 getGoogleMessages :: Dialogue [Entity GoogleMessage]
 getGoogleMessages = liftSql $ selectList [] [Asc GoogleMessageCreatedAt]

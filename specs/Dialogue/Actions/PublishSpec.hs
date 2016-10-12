@@ -25,6 +25,7 @@ mkb :: T.Text -> Integer -> Int -> Int -> DiffTime -> DiffTime -> DiffTime
     -> PublishBlock
 mkb n year month day hour minute second =
     PublishBlock n True AdiumService (mkt year month day hour minute second) ""
+                 mempty
 
 spec :: Spec
 spec =

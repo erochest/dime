@@ -6,7 +6,7 @@ module Dialogue.Stream.GoogleSpec where
 
 
 import           Control.Error
-import           Control.Lens
+import           Control.Lens               hiding ((...))
 import qualified Data.ByteString.Lazy.Char8 as L8
 import           Data.Foldable
 import           Data.Text.Encoding

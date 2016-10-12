@@ -15,6 +15,7 @@ import           Control.Monad.IO.Class
 import           Data.Foldable
 import           Data.Function           (on)
 import qualified Data.HashMap.Strict     as M
+import qualified Data.HashSet            as S
 import           Data.Int
 import qualified Data.List               as L
 import           Data.Monoid
@@ -144,10 +145,10 @@ renderGroup (Seq.viewl . _bgBlocks -> b :< bs) =
 renderGroup _ = mempty
 
 renderBlock :: Bool -> PublishBlock -> Builder
-renderBlock showTime PublishBlock{..} =
+renderBlock showTime pb@PublishBlock{..} =
     mconcat [ build "<div class='{}'>\n\n" $ Only pClass
-            , build "## {} <span class='service {}'>{}</span>\n\n"
-                    (_pbName, serviceClass _pbService, serviceIcon _pbService)
+            , build "## <span class='service {}'>{}</span> {}\n\n"
+                    (renderClass pb, _pbName, renderIcon pb)
             , if showTime
                 then fromString $ formatTime defaultTimeLocale
                                              "### %A, %e %B %Y, %H:%M\n\n"
@@ -160,30 +161,36 @@ renderBlock showTime PublishBlock{..} =
         pClass :: T.Text
         pClass = if _pbPrimary then "primary" else "secondary"
 
-serviceIcon :: Service -> Char
-serviceIcon AdiumService   = '\xf086'
-serviceIcon GoogleService  = '\xf0d5'
-serviceIcon JournalService = '\xf02d'
-serviceIcon NoteService    = '\xf040'
-serviceIcon TwitterService = '\xf099'
+renderIcon :: PublishBlock -> Builder
+renderIcon PublishBlock{_pbService=AdiumService}   = singleton '\xf086'
+renderIcon PublishBlock{_pbService=JournalService} = singleton '\xf02d'
+renderIcon PublishBlock{_pbService=NoteService}    = singleton '\xf040'
+renderIcon PublishBlock{_pbService=TwitterService} = singleton '\xf099'
+renderIcon PublishBlock{_pbService=GoogleService, _pbTags=tags}
+    | "SMS"  `S.member` tags = singleton '\xf10b'
+    | "CHAT" `S.member` tags = singleton '\xf0c0'
+    | otherwise              = singleton '\xf0d5'
 
-serviceClass :: Service -> T.Text
-serviceClass AdiumService   = "adium"
-serviceClass GoogleService  = "google"
-serviceClass JournalService = "journal"
-serviceClass NoteService    = "note"
-serviceClass TwitterService = "twitter"
+renderClass :: PublishBlock -> T.Text
+renderClass PublishBlock{_pbService=AdiumService}   = "adium"
+renderClass PublishBlock{_pbService=JournalService} = "journal"
+renderClass PublishBlock{_pbService=NoteService}    = "note"
+renderClass PublishBlock{_pbService=TwitterService} = "twitter"
+renderClass PublishBlock{_pbService=GoogleService, _pbTags=tags}
+    | "SMS"  `S.member` tags = "google sms"
+    | "CHAT" `S.member` tags = "google chat"
+    | otherwise              = "google"
 
 printEpub3 :: FilePath -> FilePath -> Dialogue ()
 printEpub3 mdFile epubFile = do
     style <- liftIO $ getDataFileName "epub-files/style.css"
     font  <- liftIO $ getDataFileName "epub-files/FontAwesome.otf"
     liftIO $ callProcess "pandoc" [ "--smart"
-                                   , "--epub-stylesheet", style
-                                   , "--epub-embed-font", font
-                                   , "--epub-chapter-level", "1"
-                                   , "--from", "markdown+autolink_bare_uris"
-                                   , "--to", "epub3"
-                                   , "--output", epubFile
-                                   , mdFile
-                                   ]
+                                  , "--epub-stylesheet", style
+                                  , "--epub-embed-font", font
+                                  , "--epub-chapter-level", "1"
+                                  , "--from", "markdown+autolink_bare_uris"
+                                  , "--to", "epub3"
+                                  , "--output", epubFile
+                                  , mdFile
+                                  ]

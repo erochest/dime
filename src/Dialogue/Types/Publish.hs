@@ -8,19 +8,25 @@ module Dialogue.Types.Publish where
 
 
 import           Control.Lens
+import           Data.Aeson
+import qualified Data.ByteString.Lazy    as BL
 import           Data.Data
-import qualified Data.HashMap.Strict  as M
+import           Data.Foldable
+import qualified Data.HashMap.Strict     as M
+import qualified Data.HashSet            as S
 import           Data.Int
-import qualified Data.Sequence        as Seq
-import qualified Data.Text            as T
+import qualified Data.Sequence           as Seq
+import qualified Data.Text               as T
+import           Data.Text.Encoding
 import           Data.Text.Format
-import qualified Data.Text.Lazy       as TL
+import qualified Data.Text.Lazy          as TL
 import           Data.Time
 import           Database.Persist.Sql
 import           GHC.Generics
 
 import           Dialogue.Fields
 import           Dialogue.Models
+import           Dialogue.Streams.Google
 
 
 type HandleNames = M.HashMap Int64 T.Text
@@ -38,6 +44,7 @@ data PublishBlock
     , _pbService :: !Service
     , _pbDate    :: !UTCTime
     , _pbContent :: !T.Text
+    , _pbTags    :: !(S.HashSet T.Text)
     } deriving (Show, Eq, Data, Typeable, Generic)
 $(makeClassy ''PublishBlock)
 
@@ -54,8 +61,8 @@ class Publishable a where
 
 block :: HandleNames -> HandleId -> T.Text -> Service -> UTCTime -> T.Text
       -> PublishBlock
-block handles hid name =
-    PublishBlock sender primary
+block handles hid name s t c =
+    PublishBlock sender primary s t c mempty
     where
         sender  = blockSender handles hid
         primary = sender == name
@@ -69,16 +76,28 @@ instance Publishable AdiumMessage where
 instance Publishable GoogleMessage where
     toBlock handles n GoogleMessage{ _googleMessageCreatedAt=d
                                    , _googleMessageContent=c
-                                   , _googleMessageSenderId=s} =
-        block handles s n GoogleService d c
+                                   , _googleMessageSenderId=s
+                                   , _googleMessageRaw=raw} =
+        block handles s n GoogleService d c & pbTags .~ tags
+        where
+            tags = fold $ do
+                raw' <- decode $ BL.fromStrict $ encodeUtf8 raw
+                let sms = case lookupHeader "X-smssync-datatype" raw' of
+                               Just "SMS" -> S.singleton "SMS"
+                               Just "MMS" -> S.singleton "SMS"
+                               _          -> S.empty
+                    chat = if "CHAT" `elem` (raw' ^. messageLabelIds)
+                              then S.singleton "CHAT"
+                              else S.empty
+                return $ sms `S.union` chat
 
 instance Publishable Journal where
     toBlock _ n Journal{_journalDate=d, _journalContent=c} =
-        PublishBlock n True JournalService d c
+        PublishBlock n True JournalService d c mempty
 
 instance Publishable NoteMessage where
     toBlock _ n NoteMessage{_noteMessageCreatedAt=d, _noteMessageContent=c} =
-        PublishBlock n True NoteService d c
+        PublishBlock n True NoteService d c mempty
 
 instance Publishable TwitterMessage where
     toBlock handles n TwitterMessage{ _twitterMessageCreatedAt=d
