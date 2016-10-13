@@ -82,13 +82,14 @@ publishEpub dbFile outputDir = runDialogueS' (T.pack dbFile) $ do
     let basename = "dialogue-" ++ now
         filename = outputDir </> basename <.> "md"
         epub     = outputDir </> basename <.> "epub"
+    tz <- liftIO getCurrentTimeZone
     md <- liftIO $ metadata ps
     liftIO
         . TLIO.writeFile filename
         . toLazyText
         . mconcat
         . (md:)
-        $ map renderChapter bs
+        $ map (renderChapter tz) bs
     printEpub3 filename epub
 
 metadata :: M.HashMap Int64 (Entity Profile) -> IO Builder
@@ -114,14 +115,14 @@ metadata ps = do
                           )
                 $ M.elems ps
 
-renderChapter :: [PublishBlock] -> Builder
-renderChapter ps@(p:_) =
-    mappend h1 $ foldMap renderGroup $ groupBlocks blockSpan ps
+renderChapter :: TimeZone -> [PublishBlock] -> Builder
+renderChapter tz ps@(p:_) =
+    mappend h1 $ foldMap (renderGroup tz) $ groupBlocks blockSpan ps
     where
         h1 = fromString
            $ formatTime defaultTimeLocale "# %B %Y\n\n"
            $ _pbDate p
-renderChapter [] = mempty
+renderChapter _ [] = mempty
 
 groupBlocks :: NominalDiffTime -> [PublishBlock] -> [BlockGroup]
 groupBlocks dt (pb:pbs) =
@@ -140,20 +141,23 @@ groupBlocks dt (pb:pbs) =
 
 groupBlocks _ [] = []
 
-renderGroup :: BlockGroup -> Builder
-renderGroup (Seq.viewl . _bgBlocks -> b :< bs) =
-    mconcat [renderBlock True b, foldMap (renderBlock False) bs, "---\n\n"]
-renderGroup _ = mempty
+renderGroup :: TimeZone -> BlockGroup -> Builder
+renderGroup tz (Seq.viewl . _bgBlocks -> b :< bs) =
+    mconcat [ renderBlock True tz b
+            , foldMap (renderBlock False tz) bs
+            , "---\n\n"
+            ]
+renderGroup _ _ = mempty
 
-renderBlock :: Bool -> PublishBlock -> Builder
-renderBlock showTime pb@PublishBlock{..} =
+renderBlock :: Bool -> TimeZone -> PublishBlock -> Builder
+renderBlock showTime tz pb@PublishBlock{..} =
     mconcat [ build "<div class='{}'>\n\n" $ Only pClass
             , build "## <span class='service {}'>{}</span> <span class='service-name'>{}</span>\n\n"
                     (sClass, _pbName, sClass)
             , if showTime
                  then fromString $ formatTime defaultTimeLocale
                                     "### %A, %e %B %Y, %H:%M\n\n"
-                                    _pbDate
+                                    (utcToLocalTime tz _pbDate)
                  else mempty
             , foldMap (build "#### {}\n\n" . Only) _pbHeader
             , fromText _pbContent
