@@ -142,23 +142,21 @@ groupBlocks dt (pb:pbs) =
 groupBlocks _ [] = []
 
 renderGroup :: TimeZone -> BlockGroup -> Builder
-renderGroup tz (Seq.viewl . _bgBlocks -> b :< bs) =
-    mconcat [ renderBlock True tz b
-            , foldMap (renderBlock False tz) bs
+renderGroup tz bs@(Seq.viewl . _bgBlocks -> b :< _) =
+    mconcat [ fromString $ formatTime defaultTimeLocale
+                                      "## %A, %e %B %Y, %H:%M\n\n"
+                                      $ utcToLocalTime tz $ b ^. pbDate
+            , foldMap renderBlock (bs ^. bgBlocks)
             , "---\n\n"
             ]
 renderGroup _ _ = mempty
 
-renderBlock :: Bool -> TimeZone -> PublishBlock -> Builder
-renderBlock showTime tz pb@PublishBlock{..} =
+renderBlock :: PublishBlock -> Builder
+renderBlock pb@PublishBlock{..} =
     mconcat [ build "<div class='{}'>\n\n" $ Only pClass
-            , build "## <span class='service {}'>{}</span> <span class='service-name'>{}</span>\n\n"
+            , build "### <span class='service {}'>{}</span>\
+                    \ <span class='service-name'>{}</span>\n\n"
                     (sClass, _pbName, sClass)
-            , if showTime
-                 then fromString $ formatTime defaultTimeLocale
-                                    "### %A, %e %B %Y, %H:%M\n\n"
-                                    (utcToLocalTime tz _pbDate)
-                 else mempty
             , foldMap (build "#### {}\n\n" . Only) _pbHeader
             , fromText _pbContent
             , "\n\n</div>\n\n"

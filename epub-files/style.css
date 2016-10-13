@@ -18,19 +18,19 @@ em, em em em, em em em em em { font-style: italic;}
 em em, em em em em { font-style: normal; }
 
 h1 {
-    font-family: sans-serif;
-    font-size: 1.1rem;
+    font-family: serif;
+    font-size: 1.2rem;
 }
 
 h2 {
-    font-family: sans-serif;
+    font-family: serif;
     font-size: 1rem;
+    color: gray;
 }
 
 h3 {
     font-family: serif;
-    font-size: 0.8rem;
-    color: gray;
+    font-size: 1rem;
 }
 
 h4 {
