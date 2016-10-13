@@ -18,7 +18,6 @@ import qualified Data.HashMap.Strict     as M
 import qualified Data.HashSet            as S
 import           Data.Int
 import qualified Data.List               as L
-import           Data.Monoid
 import           Data.Ord                (comparing)
 import           Data.Sequence           (ViewL (..), (|>))
 import qualified Data.Sequence           as Seq
@@ -117,9 +116,11 @@ metadata ps = do
 
 renderChapter :: [PublishBlock] -> Builder
 renderChapter ps@(p:_) =
-    mappend h1 . foldMap renderGroup $ groupBlocks blockSpan ps
+    mappend h1 $ foldMap renderGroup $ groupBlocks blockSpan ps
     where
-        h1 = fromString $ formatTime defaultTimeLocale "# %B %Y\n\n" $ _pbDate p
+        h1 = fromString
+           $ formatTime defaultTimeLocale "# %B %Y\n\n"
+           $ _pbDate p
 renderChapter [] = mempty
 
 groupBlocks :: NominalDiffTime -> [PublishBlock] -> [BlockGroup]
@@ -141,35 +142,28 @@ groupBlocks _ [] = []
 
 renderGroup :: BlockGroup -> Builder
 renderGroup (Seq.viewl . _bgBlocks -> b :< bs) =
-        renderBlock True b <> foldMap (renderBlock False) bs <> "---\n\n"
+    mconcat [renderBlock True b, foldMap (renderBlock False) bs, "---\n\n"]
 renderGroup _ = mempty
 
 renderBlock :: Bool -> PublishBlock -> Builder
 renderBlock showTime pb@PublishBlock{..} =
     mconcat [ build "<div class='{}'>\n\n" $ Only pClass
-            , build "## <span class='service {}'>{}</span> {}\n\n"
-                    (renderClass pb, _pbName, renderIcon pb)
+            , build "## <span class='service {}'>{}</span> <span class='service-name'>{}</span>\n\n"
+                    (sClass, _pbName, sClass)
             , if showTime
-                then fromString $ formatTime defaultTimeLocale
-                                             "### %A, %e %B %Y, %H:%M\n\n"
-                                             _pbDate
-                else mempty
+                 then fromString $ formatTime defaultTimeLocale
+                                    "### %A, %e %B %Y, %H:%M\n\n"
+                                    _pbDate
+                 else mempty
             , fromText _pbContent
             , "\n\n</div>\n\n"
             ]
     where
+        sClass :: T.Text
+        sClass = renderClass pb
+
         pClass :: T.Text
         pClass = if _pbPrimary then "primary" else "secondary"
-
-renderIcon :: PublishBlock -> Builder
-renderIcon PublishBlock{_pbService=AdiumService}   = singleton '\xf086'
-renderIcon PublishBlock{_pbService=JournalService} = singleton '\xf02d'
-renderIcon PublishBlock{_pbService=NoteService}    = singleton '\xf040'
-renderIcon PublishBlock{_pbService=TwitterService} = singleton '\xf099'
-renderIcon PublishBlock{_pbService=GoogleService, _pbTags=tags}
-    | "SMS"  `S.member` tags = singleton '\xf10b'
-    | "CHAT" `S.member` tags = singleton '\xf0c0'
-    | otherwise              = singleton '\xf0d5'
 
 renderClass :: PublishBlock -> T.Text
 renderClass PublishBlock{_pbService=AdiumService}   = "adium"
@@ -184,10 +178,8 @@ renderClass PublishBlock{_pbService=GoogleService, _pbTags=tags}
 printEpub3 :: FilePath -> FilePath -> Dialogue ()
 printEpub3 mdFile epubFile = do
     style <- liftIO $ getDataFileName "epub-files/style.css"
-    font  <- liftIO $ getDataFileName "epub-files/FontAwesome.otf"
     liftIO $ callProcess "pandoc" [ "--smart"
                                   , "--epub-stylesheet", style
-                                  , "--epub-embed-font", font
                                   , "--epub-chapter-level", "1"
                                   , "--from", "markdown+autolink_bare_uris"
                                   , "--to", "epub3"

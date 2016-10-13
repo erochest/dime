@@ -12,7 +12,6 @@ build-type:          Simple
 -- extra-source-files:
 cabal-version:       >=1.10
 data-files:            epub-files/style.css
-                     , epub-files/FontAwesome.otf
 
 library
   exposed-modules:     Dialogue.Actions.Archive
