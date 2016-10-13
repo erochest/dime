@@ -155,6 +155,7 @@ renderBlock showTime pb@PublishBlock{..} =
                                     "### %A, %e %B %Y, %H:%M\n\n"
                                     _pbDate
                  else mempty
+            , foldMap (build "#### {}\n\n" . Only) _pbHeader
             , fromText _pbContent
             , "\n\n</div>\n\n"
             ]
