@@ -343,7 +343,7 @@ downloadGoogleMessages gs = do
     runResourceT
         $   pages optq Nothing
         =$= mapC _messageShortId
-        =$= takeWhileC (not . (`S.member` seen))
+        =$= filterC (not . (`S.member` seen))
         =$= chunkC 50
         =$= iterMC      (liftIO . const (threadDelay 5000))
         =$= mapMC       ( lift
