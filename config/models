@@ -73,3 +73,14 @@ TwitterMessage json
     UniqueTwitterId twitterId
     deriving Show
     deriving Eq
+
+MailMessage json
+    mailId Text
+    createdAt UTCTime
+    senderId HandleId
+    recipientId HandleId
+    subject Text
+    content Text
+    raw Text
+    deriving Show
+    deriving Eq

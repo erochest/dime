@@ -17,6 +17,7 @@ library
   exposed-modules:     Dialogue.Actions.Archive
                      , Dialogue.Actions.Init
                      , Dialogue.Actions.Journal
+                     , Dialogue.Actions.Mail
                      , Dialogue.Actions.Migrate
                      , Dialogue.Actions.Publish
                      , Dialogue.Actions.Stats
@@ -28,6 +29,7 @@ library
                      , Dialogue.Streams.Adium
                      , Dialogue.Streams.Google
                      , Dialogue.Streams.Journal
+                     , Dialogue.Streams.Mail
                      , Dialogue.Streams.Note
                      , Dialogue.Streams.Twitter
                      , Dialogue.Types
@@ -56,15 +58,19 @@ library
                      , groom
                      , hashable
                      , hoauth2
+                     , hsemail
                      , http-client
                      , http-conduit
                      , http-types
                      , lens
                      , lucid
+                     , mbox
+                     , mime
                      , monad-control
                      , monad-logger
                      , mtl
                      , open-browser
+                     , parsec
                      , persistent
                      , persistent-sqlite
                      , persistent-template

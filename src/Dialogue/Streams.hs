@@ -19,6 +19,7 @@ import           Dialogue.Fields
 import           Dialogue.Models
 import           Dialogue.Streams.Adium
 import           Dialogue.Streams.Google
+import           Dialogue.Streams.Mail
 import           Dialogue.Streams.Note
 import           Dialogue.Streams.Twitter
 import           Dialogue.Types.Dialogue
@@ -96,6 +97,24 @@ instance MessageStream GoogleStream GoogleMessage where
     downloadMessages = downloadGoogleMessages
     retrieveMessages = const getGoogleMessages
 
+instance MessageStream MailStream MailMessage where
+    streamName           = const "Mail"
+    streamName'          = const "mMail"
+    streamService        = const MailService
+    getStreamFromService MailService = Just <$> openStream
+    getStreamFromService _           = return Nothing
+
+    isActive = const $ serviceIsActive MailService
+
+    openStream = loadMail
+    saveStream = saveMail
+
+    getLastUpdatedDate = const $ return Nothing
+    getLastUpdatedID   = const $ return Nothing
+
+    downloadMessages = loadMbox
+    retrieveMessages = const loadMailMessages
+
 instance MessageStream NoteStream NoteMessage where
     streamName  = const "Note"
     streamName' = const "Note"
@@ -140,6 +159,9 @@ instance HasServiceId AdiumStream where
 
 instance HasServiceId GoogleStream where
     serviceId = googleServiceId
+
+instance HasServiceId MailStream where
+    serviceId = mailServiceId
 
 instance HasServiceId NoteStream where
     serviceId = noteServiceId

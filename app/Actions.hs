@@ -11,6 +11,7 @@ import           Control.Error
 import           Dialogue.Actions.Archive
 import           Dialogue.Actions.Init
 import           Dialogue.Actions.Journal
+import           Dialogue.Actions.Mail
 import           Dialogue.Actions.Migrate
 import           Dialogue.Actions.Publish
 import           Dialogue.Actions.Stats
@@ -24,6 +25,7 @@ action :: Actions -> Script ()
 action Archive{..} = archiveDb archiveDbFile archiveOutput
 action Init{..}    = initialize initDbFile
 action Journal{..} = addJournal journalDbFile journalDate journalInput
+action Mail{..}    = importMBox mailDbFile mailMBox
 action Migrate{..} = migrateFile migrateDbFile migrateStream migrateInput
 action Publish{..} = publishEpub publishDbFile publishOutDir
 action Stats{..}   = generateStats statsDbFile statsOutput

@@ -17,6 +17,9 @@ data Actions
               , journalDate   :: !(Maybe UTCTime)
               , journalInput  :: !TextInput
               }
+    | Mail    { mailDbFile    :: !FilePath
+              , mailMBox      :: !FilePath
+              }
     | Migrate { migrateDbFile :: !FilePath
               , migrateInput  :: !FilePath
               , migrateStream :: !Service

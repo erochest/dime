@@ -171,6 +171,7 @@ renderBlock pb@PublishBlock{..} =
 renderClass :: PublishBlock -> T.Text
 renderClass PublishBlock{_pbService=AdiumService}   = "adium"
 renderClass PublishBlock{_pbService=JournalService} = "journal"
+renderClass PublishBlock{_pbService=MailService}    = "email"
 renderClass PublishBlock{_pbService=NoteService}    = "note"
 renderClass PublishBlock{_pbService=TwitterService} = "twitter"
 renderClass PublishBlock{_pbService=GoogleService, _pbTags=tags}

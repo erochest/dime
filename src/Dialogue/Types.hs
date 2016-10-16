@@ -43,6 +43,7 @@ import           Dialogue.Models
 import           Dialogue.Streams
 import           Dialogue.Streams.Adium
 import           Dialogue.Streams.Google
+import           Dialogue.Streams.Mail
 import           Dialogue.Streams.Note
 import           Dialogue.Streams.Twitter
 import           Dialogue.Types.Dialogue
@@ -98,15 +99,14 @@ checkPrompt msg = do
     add <- prompt msg
     if add then Just <$> prompt "" else return Nothing
 
--- TODO: More than one handle/profile.
 profilesFor :: Service -> Dialogue ()
-profilesFor s =   liftSql (selectList [] [])
-              >>= mapM_ (\(Entity pid p) -> do
-                    name' <- promptMaybe $  "Handle for "
-                                         <> (p ^. profileNickname)
-                    case name' of
-                        Just name -> liftSql . insert_ $ Handle name s pid
-                        Nothing   -> return ())
+profilesFor s = liftSql (selectList [] []) >>= mapM_ go
+    where
+        go e@(Entity pid p) = do
+            name' <- promptMaybe $  "Handle for " <> (p ^. profileNickname)
+            case name' of
+                Just name -> liftSql (insert_ $ Handle name s pid) >> go e
+                Nothing   -> return ()
 
 instance Promptable T.Text where
     prompt msg =  liftIO
@@ -145,6 +145,14 @@ instance Promptable AdiumStream where
         liftIO $ TIO.putStrLn msg
         profilesFor AdiumService
         AdiumStream Nothing <$> prompt "Adium directory"
+
+    promptMaybe = checkPrompt
+
+instance Promptable MailStream where
+    prompt msg = do
+        liftIO $ TIO.putStrLn msg
+        profilesFor MailService
+        return $ MailStream Nothing
 
     promptMaybe = checkPrompt
 

@@ -15,7 +15,7 @@ module Dialogue.Streams.Google where
 import qualified Codec.Binary.Base64Url                as B64
 import           Conduit
 import           Control.Applicative
-import           Control.Arrow                         ((&&&), (***))
+import           Control.Arrow                         ((&&&))
 import           Control.Concurrent                    hiding (yield)
 import           Control.Error
 import           Control.Exception.Safe
@@ -485,20 +485,9 @@ toGM idx users m = do
         getUsers i (u1, u2) hs = do
             sender <- hs ^? traverse
                          .  hdr "From" . headerValue
-                         .  to parseEmail . _2
+                         .  to (fold . hush . parseEmail) . traverse . _2
             let recipient = if sender == u1 then u2 else u1
             (,) <$> M.lookup sender i <*> M.lookup recipient i
-
-        parseEmail :: T.Text -> (Maybe T.Text, T.Text)
-        parseEmail e =
-            case T.breakOn " <" e of
-                (email, r) | T.null r -> (Nothing, email)
-                pair -> (Just *** (T.dropAround isBracket . T.strip)) pair
-
-        isBracket :: Char -> Bool
-        isBracket '<' = True
-        isBracket '>' = True
-        isBracket _   = False
 
         isTextPart :: Payload -> Bool
         isTextPart = any isTextHeader . fold . _payloadHeaders

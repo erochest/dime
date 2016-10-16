@@ -39,9 +39,14 @@ stats: build
 	jq -r '.[] | [.year, .month, .adium.primary.count, .adium.secondary.count, .google.primary.count, .google.secondary.count, .twitter.primary.count, .twitter.secondary.count] | @csv' \
 		`make last-stats` > tmp/stats-`timestamp`.csv
 
+mail: build
+	echo "delete from mail_message;" | sqlite3 $(DB)
+	$(RUN) mail --db-file $(DB) --input tmp/mail.eml 2> tmp/log.out
+	echo "select count(*) from mail_message;" | sqlite3 $(DB)
+
 publish: build
 	$(RUN) publish --db-file $(DB) --output tmp/epub3/
-	# epubcheck tmp/epub3/*.epub
+	epubcheck tmp/epub3/*.epub
 
 archivedb:
 	cp dialogue.sqlite tmp/dialogue.sqlite-`timestamp`

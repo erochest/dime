@@ -87,6 +87,9 @@ initOpts = Init <$> dbFileOpt
 journalOpts :: Parser Actions
 journalOpts = Journal <$> dbFileOpt <*> optional dateOpt <*> inputOpt
 
+mailOpts :: Parser Actions
+mailOpts = Mail <$> dbFileOpt <*> inputFileOpt
+
 migrateOpts :: Parser Actions
 migrateOpts = Migrate <$> dbFileOpt <*> inputFileOpt <*> serviceOpt
 
@@ -110,6 +113,8 @@ opts' = subparser
                             (progDesc "Default action and options."))
       <> command "journal" (info (helper <*> journalOpts)
                             (progDesc "Record a separate journal entry."))
+      <> command "mail"    (info (helper <*> mailOpts)
+                            (progDesc "Import an mbox file."))
       <> command "migrate" (info (helper <*> migrateOpts)
                             (progDesc "Import a data file from previous\
                                       \ iterations of this program."))

@@ -5,23 +5,23 @@
 module Dialogue.Utils where
 
 
-import           Control.Arrow                ((&&&))
-import           Control.Lens                 (view, _1, _2)
+import           Control.Arrow                         ((&&&))
+import           Control.Lens                          (view, _1, _2)
 import           Control.Monad
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Reader
 import           Control.Monad.Trans.Resource
-import qualified Data.Aeson.Types             as AT
+import qualified Data.Aeson.Types                      as AT
 import           Data.Bifunctor
-import           Data.ByteString              (ByteString)
-import qualified Data.ByteString.Char8        as C8
-import           Data.Char                    (toLower)
+import           Data.ByteString                       (ByteString)
+import qualified Data.ByteString.Char8                 as C8
+import           Data.Char                             (toLower)
 import           Data.Foldable
 import           Data.Monoid
-import qualified Data.Sequence                as S
-import qualified Data.Text                    as T
+import qualified Data.Sequence                         as S
+import qualified Data.Text                             as T
 import           Data.Text.Format
-import qualified Data.Text.Format             as F
+import qualified Data.Text.Format                      as F
 import           Data.Text.Read
 import           Data.Time
 import           Database.Persist
@@ -29,6 +29,8 @@ import           Debug.Trace
 import           System.Directory
 import           System.IO
 import           Text.Groom
+import           Text.Parsec
+import           Text.ParserCombinators.Parsec.Rfc2822 hiding (second)
 import           Web.Browser
 
 
@@ -115,3 +117,10 @@ prefixOptions n = AT.defaultOptions
 
 monthKey :: UTCTime -> (Integer, Int)
 monthKey = (view _1 &&& view _2) . toGregorian . utctDay
+
+parseEmail :: T.Text -> Either String [(Maybe T.Text, T.Text)]
+parseEmail = (show `bimap` fmap extract)
+           . runParser mailbox_list () "INPUT"
+           . T.unpack
+    where
+        extract = (fmap T.pack . nameAddr_name) &&& (T.pack . nameAddr_addr)

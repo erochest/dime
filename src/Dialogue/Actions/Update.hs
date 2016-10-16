@@ -31,6 +31,7 @@ updateService dbFile service = runDialogueS' (T.pack dbFile) $
         AdiumService   -> loadAdium   >>= update'
         GoogleService  -> loadGoogle  >>= update'
         JournalService -> liftIO $ TIO.putStrLn "Nothing to update with journal."
+        MailService    -> liftIO $ TIO.putStrLn "Nothing to update with mbox."
         NoteService    -> loadNote    >>= update'
         TwitterService -> loadTwitter >>= update'
         -- s -> throwD . UpdateException $ "Invalid service: " <> T.pack (show s)
