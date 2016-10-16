@@ -105,6 +105,14 @@ instance Publishable Journal where
     toBlock _ n Journal{_journalDate=d, _journalContent=c} =
         PublishBlock n True JournalService d Nothing c mempty
 
+instance Publishable MailMessage where
+    toBlock handles n MailMessage{ _mailMessageCreatedAt=d
+                                 , _mailMessageSubject=subj
+                                 , _mailMessageContent=c
+                                 , _mailMessageSenderId=s
+                                 } =
+        block handles s n MailService d c & pbHeader ?~ subj
+
 instance Publishable NoteMessage where
     toBlock _ n NoteMessage{_noteMessageCreatedAt=d, _noteMessageContent=c} =
         PublishBlock n True NoteService d Nothing c mempty

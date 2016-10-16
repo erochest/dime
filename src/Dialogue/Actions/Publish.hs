@@ -49,12 +49,14 @@ publishEpub dbFile outputDir = runDialogueS' (T.pack dbFile) $ do
     as :: [AdiumMessage  ] <- liftSql $ map entityVal <$> selectList [] []
     gs :: [GoogleMessage ] <- liftSql $ map entityVal <$> selectList [] []
     js :: [Journal       ] <- liftSql $ map entityVal <$> selectList [] []
+    ms :: [MailMessage   ] <- liftSql $ map entityVal <$> selectList [] []
     ns :: [NoteMessage   ] <- liftSql $ map entityVal <$> selectList [] []
     ts :: [TwitterMessage] <- liftSql $ map entityVal <$> selectList [] []
 
     ps <-  liftSql $ M.fromList . map ((fromSqlKey . entityKey) &&& id)
        <$> selectList [] []
-    let p0 = fold $ snd <$> getProfile (_profilePrimary . entityVal) (M.elems ps)
+    let p0 = fold $ snd <$> getProfile (_profilePrimary . entityVal)
+                                       (M.elems ps)
 
     hs <-  liftSql
        $   M.fromList
@@ -71,14 +73,16 @@ publishEpub dbFile outputDir = runDialogueS' (T.pack dbFile) $ do
         as' = tob as
         gs' = tob gs
         js' = tob js
+        ms' = tob ms
         ns' = tob ns
         ts' = tob ts
         bs  = L.groupBy ((==) `on` (monthKey . _pbDate))
             $ L.sortBy (comparing _pbDate)
-            $ mconcat [as', gs', js' , ns', ts']
+            $ mconcat [as', gs', js', ms', ns', ts']
 
     liftIO $ createDirectoryIfMissing True outputDir
-    now <- liftIO $ formatTime defaultTimeLocale "%Y%m%d-%H%M%S" <$> getCurrentTime
+    now <- liftIO
+        $  formatTime defaultTimeLocale "%Y%m%d-%H%M%S" <$> getCurrentTime
     let basename = "dialogue-" ++ now
         filename = outputDir </> basename <.> "md"
         epub     = outputDir </> basename <.> "epub"
