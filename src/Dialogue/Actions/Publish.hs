@@ -18,6 +18,7 @@ import qualified Data.HashMap.Strict     as M
 import qualified Data.HashSet            as S
 import           Data.Int
 import qualified Data.List               as L
+import           Data.Monoid
 import           Data.Ord                (comparing)
 import           Data.Sequence           (ViewL (..), (|>))
 import qualified Data.Sequence           as Seq
@@ -162,7 +163,7 @@ renderBlock pb@PublishBlock{..} =
                     \ <span class='service-name'>{}</span>\n\n"
                     (sClass, _pbName, sClass)
             , foldMap (build "#### {}\n\n" . Only) _pbHeader
-            , fromText _pbContent
+            , fromText $ escapeContents _pbContent
             , "\n\n</div>\n\n"
             ]
     where
@@ -171,6 +172,22 @@ renderBlock pb@PublishBlock{..} =
 
         pClass :: T.Text
         pClass = if _pbPrimary then "primary" else "secondary"
+
+escapeContents :: T.Text -> T.Text
+escapeContents = T.unlines . map (escapeLine . escapeHtml) . T.lines
+    where
+        escapeLine t
+            | "#"   `T.isPrefixOf` t = "\\" <> t
+            | "---" `T.isPrefixOf` t = "\\" <> t
+            | otherwise              = t
+
+        escapeHtml = T.replace "<"    "&lt;"
+                   . T.replace ">"    "&gt;"
+                   . T.replace "&"    "&amp;"
+                   . T.replace "\x1b" " "
+                   -- This one is for preventing swear punctuation from getting
+                   -- interpreted as email links.
+                   . T.replace "@"    "-at-"
 
 renderClass :: PublishBlock -> T.Text
 renderClass PublishBlock{_pbService=AdiumService}   = "adium"

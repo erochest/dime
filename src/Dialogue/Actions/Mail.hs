@@ -91,6 +91,9 @@ parseMessage index m = do
         isTextPlain Type{mimeType=(Text "plain")} = True
         isTextPlain _                             = False
 
+        -- recode :: T.Text -> T.Text
+        -- recode = decodeLatin1 . B8.filter (/= '\x1b') . B8.pack . T.unpack
+
 (???) :: Maybe x -> T.Text -> Either MailException x
 m ??? e = note (MailException e) m
 

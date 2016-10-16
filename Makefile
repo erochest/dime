@@ -46,7 +46,10 @@ mail: build
 
 publish: build
 	$(RUN) publish --db-file $(DB) --output tmp/epub3/
-	epubcheck tmp/epub3/*.epub
+	-rm -rf tmp/epub3-contents
+	mkdir tmp/epub3-contents
+	unzip -d tmp/epub3-contents `make last-epub`
+	epubcheck `make last-epub`
 
 archivedb:
 	cp dialogue.sqlite tmp/dialogue.sqlite-`timestamp`
@@ -56,6 +59,9 @@ last-archive:
 
 last-stats:
 	@ls -1 tmp/stats-*.json | tail -1
+
+last-epub:
+	@ls -1 tmp/epub3/*.epub | tail -1
 
 docs:
 	stack haddock
@@ -103,7 +109,7 @@ bench:
 	stack bench $(BUILD_FLAGS)
 
 watch:
-	stack build --file-watch --pedantic --fast
+	stack build --file-watch --pedantic --fast --exec "make publish"
 
 watch-test:
 	stack test --file-watch --pedantic --test-arguments "-m Google"
