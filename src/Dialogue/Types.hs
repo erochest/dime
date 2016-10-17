@@ -42,6 +42,7 @@ import           Dialogue.Fields
 import           Dialogue.Models
 import           Dialogue.Streams
 import           Dialogue.Streams.Adium
+import           Dialogue.Streams.GDoc
 import           Dialogue.Streams.Google
 import           Dialogue.Streams.Mail
 import           Dialogue.Streams.Note
@@ -187,5 +188,14 @@ instance Promptable GoogleStream where
         token <- loginGoogle
         profilesFor GoogleService
         return $ GoogleStream Nothing token
+
+    promptMaybe = checkPrompt
+
+instance Promptable GDocStream where
+    prompt msg = do
+        liftIO $ TIO.putStrLn msg
+        liftIO $ TIO.putStrLn "You must also enable Google."
+        folder <- prompt "Folder to sync"
+        GDocStream Nothing folder . _googleRefresh <$> loadGoogle
 
     promptMaybe = checkPrompt

@@ -33,6 +33,15 @@ AdiumMessage json
     deriving Show
     deriving Eq
 
+GDoc json
+    gdocId Text
+    createdAt UTCTime
+    author ProfileId
+    title Text
+    content Text
+    deriving Show
+    deriving Eq
+
 GoogleMessage json
     googleId Text
     threadId Text Maybe

@@ -18,6 +18,7 @@ import           Database.Persist
 import           Dialogue.Fields
 import           Dialogue.Models
 import           Dialogue.Streams.Adium
+import           Dialogue.Streams.GDoc
 import           Dialogue.Streams.Google
 import           Dialogue.Streams.Mail
 import           Dialogue.Streams.Note
@@ -78,6 +79,25 @@ instance MessageStream AdiumStream AdiumMessage where
 
     downloadMessages = getNewAdiumMessages
     retrieveMessages = const loadAdiumMessages
+
+instance MessageStream GDocStream GDoc where
+    streamName    = const "GDoc"
+    streamName'   = const "GDoc"
+    streamService = const GDocService
+    getStreamFromService GDocService = Just <$> openStream
+    getStreamFromService _           = pure Nothing
+
+    isActive = const $ serviceIsActive GDocService
+
+    openStream = loadGDoc
+    saveStream = saveGDoc
+
+    getLastUpdatedDate = const lastGDocUpdatedDate
+    getLastUpdatedID   = const lastGDocUpdatedID
+
+    downloadMessages = downloadGDocs
+    retrieveMessages = const getGDocs
+
 
 instance MessageStream GoogleStream GoogleMessage where
     streamName    = const "Google"
@@ -156,6 +176,9 @@ class HasServiceId a where
 
 instance HasServiceId AdiumStream where
     serviceId = adiumServiceId
+
+instance HasServiceId GDocStream where
+    serviceId = gdocServiceId
 
 instance HasServiceId GoogleStream where
     serviceId = googleServiceId

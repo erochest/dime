@@ -67,17 +67,18 @@ serviceOpt :: Parser Service
 serviceOpt = option (parse . map toLower =<< str)
                     (  short 's' <> long "service" <> metavar "SERVICE_NAME"
                     <> help "The service to operate on. This is one of\
-                            \ 'adium', 'google', 'journal', 'note', or\
+                            \ 'adium', 'gdoc', 'google', 'journal', 'note', or\
                             \ 'twitter'. You just need enough of this to be\
                             \ unique.")
     where
         parse :: MonadPlus m => String -> m Service
-        parse name | take 1 name == "a" = return AdiumService
-                   | take 1 name == "g" = return GoogleService
-                   | take 1 name == "j" = return JournalService
-                   | take 1 name == "n" = return NoteService
-                   | take 1 name == "t" = return TwitterService
-                   | otherwise          = mzero
+        parse name | take 1 name == "a"  = return AdiumService
+                   | take 2 name == "gd" = return GDocService
+                   | take 2 name == "go" = return GoogleService
+                   | take 1 name == "j"  = return JournalService
+                   | take 1 name == "n"  = return NoteService
+                   | take 1 name == "t"  = return TwitterService
+                   | otherwise           = mzero
 
 -- * Command parsers
 

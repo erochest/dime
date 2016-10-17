@@ -48,6 +48,7 @@ blockSpan = 900
 publishEpub :: FilePath -> FilePath -> Script ()
 publishEpub dbFile outputDir = runDialogueS' (T.pack dbFile) $ do
     as :: [AdiumMessage  ] <- liftSql $ map entityVal <$> selectList [] []
+    gd :: [GDoc          ] <- liftSql $ map entityVal <$> selectList [] []
     gs :: [GoogleMessage ] <- liftSql $ map entityVal <$> selectList [] []
     js :: [Journal       ] <- liftSql $ map entityVal <$> selectList [] []
     ms :: [MailMessage   ] <- liftSql $ map entityVal <$> selectList [] []
@@ -72,6 +73,7 @@ publishEpub dbFile outputDir = runDialogueS' (T.pack dbFile) $ do
     let tob :: forall t p. (Functor t, Publishable p) => t p -> t PublishBlock
         tob = fmap (toBlock hs p0)
         as' = tob as
+        gd' = tob gd
         gs' = tob gs
         js' = tob js
         ms' = tob ms
@@ -79,7 +81,7 @@ publishEpub dbFile outputDir = runDialogueS' (T.pack dbFile) $ do
         ts' = tob ts
         bs  = L.groupBy ((==) `on` (monthKey . _pbDate))
             $ L.sortBy (comparing _pbDate)
-            $ mconcat [as', gs', js', ms', ns', ts']
+            $ mconcat [as', gd', gs', js', ms', ns', ts']
 
     liftIO $ createDirectoryIfMissing True outputDir
     now <- liftIO
@@ -191,6 +193,7 @@ escapeContents = T.unlines . map (escapeLine . escapeHtml) . T.lines
 
 renderClass :: PublishBlock -> T.Text
 renderClass PublishBlock{_pbService=AdiumService}   = "adium"
+renderClass PublishBlock{_pbService=GDocService}    = "google gdoc"
 renderClass PublishBlock{_pbService=JournalService} = "journal"
 renderClass PublishBlock{_pbService=MailService}    = "email"
 renderClass PublishBlock{_pbService=NoteService}    = "note"

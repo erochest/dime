@@ -11,7 +11,7 @@ data Actions
     = Archive { archiveDbFile :: !FilePath
               , archiveOutput :: !FilePath
               }
-    | Init    { initDbFile :: !FilePath
+    | Init    { initDbFile    :: !FilePath
               }
     | Journal { journalDbFile :: !FilePath
               , journalDate   :: !(Maybe UTCTime)
@@ -27,8 +27,8 @@ data Actions
     | Publish { publishDbFile :: !FilePath
               , publishOutDir :: !FilePath
               }
-    | Stats   { statsDbFile :: !FilePath
-              , statsOutput :: !FilePath
+    | Stats   { statsDbFile   :: !FilePath
+              , statsOutput   :: !FilePath
               }
     | Update  { updateDbFile  :: !FilePath
               , updateStream  :: !Service

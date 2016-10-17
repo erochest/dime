@@ -16,6 +16,7 @@ import           Dialogue.Fields
 import           Dialogue.Types.Dialogue
 import           Dialogue.Streams
 import           Dialogue.Streams.Adium
+import           Dialogue.Streams.GDoc
 import           Dialogue.Streams.Google
 import           Dialogue.Streams.Note
 import           Dialogue.Streams.Twitter
@@ -29,6 +30,7 @@ updateService :: FilePath -> Service -> Script ()
 updateService dbFile service = runDialogueS' (T.pack dbFile) $
     case service of
         AdiumService   -> loadAdium   >>= update'
+        GDocService    -> loadGDoc    >>= update'
         GoogleService  -> loadGoogle  >>= update'
         JournalService -> liftIO $ TIO.putStrLn "Nothing to update with journal."
         MailService    -> liftIO $ TIO.putStrLn "Nothing to update with mbox."

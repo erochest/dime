@@ -74,6 +74,10 @@ instance Publishable AdiumMessage where
                                   , _adiumMessageSenderHandleId=s} =
         block handles s n AdiumService d c
 
+instance Publishable GDoc where
+    toBlock _ n GDoc{_gDocCreatedAt=d, _gDocTitle=t, _gDocContent=c} =
+        PublishBlock n True GDocService d (Just t) c mempty
+
 instance Publishable GoogleMessage where
     toBlock handles n GoogleMessage{ _googleMessageCreatedAt=d
                                    , _googleMessageContent=c

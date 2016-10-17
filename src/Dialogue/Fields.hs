@@ -22,10 +22,12 @@ data Service = TwitterService
              | NoteService
              | JournalService
              | MailService
+             | GDocService
              deriving (Eq, Show, Read, Data, Typeable, Generic)
 
 instance ToJSON Service where
     toJSON AdiumService   = String "adium"
+    toJSON GDocService    = String "gdoc"
     toJSON GoogleService  = String "google"
     toJSON JournalService = String "journal"
     toJSON MailService    = String "mail"
@@ -34,6 +36,7 @@ instance ToJSON Service where
 
 instance FromJSON Service where
     parseJSON (String "adium"  ) = pure AdiumService
+    parseJSON (String "gdoc"   ) = pure GDocService
     parseJSON (String "google" ) = pure GoogleService
     parseJSON (String "journal") = pure JournalService
     parseJSON (String "mail"   ) = pure MailService

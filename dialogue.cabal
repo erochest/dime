@@ -27,6 +27,7 @@ library
                      , Dialogue.Models
                      , Dialogue.Streams
                      , Dialogue.Streams.Adium
+                     , Dialogue.Streams.GDoc
                      , Dialogue.Streams.Google
                      , Dialogue.Streams.Journal
                      , Dialogue.Streams.Mail

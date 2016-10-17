@@ -67,14 +67,15 @@ import           Dialogue.Types.Dialogue
 import           Dialogue.Utils
 
 
-messagesPath, messagesUrl, threadsPath, threadsUrl, meUrl, batchUrl :: String
+apiHost, messagesPath, messagesUrl, threadsPath, threadsUrl, meUrl, batchUrl :: String
 
+apiHost      = "https://www.googleapis.com"
 messagesPath = "/gmail/v1/users/me/messages"
-messagesUrl  = "https://www.googleapis.com" <> messagesPath
+messagesUrl  = apiHost <> messagesPath
 threadsPath  = "/gmail/v1/users/me/threads"
-threadsUrl   = "https://www.googleapis.com" <> threadsPath
-meUrl        = "https://www.googleapis.com/gmail/v1/users/me/profile"
-batchUrl     = "https://www.googleapis.com/batch"
+threadsUrl   = apiHost <> threadsPath
+meUrl        = apiHost <> "/gmail/v1/users/me/profile"
+batchUrl     = apiHost <> "/batch"
 
 newtype GoogleException = GoogleException { unGoogleException :: T.Text }
                         deriving (Show, Eq, Data, Typeable, Generic)
@@ -248,6 +249,7 @@ loginGoogle = do
         googleScopeRead   = [("scope", "https://www.googleapis.com/auth/gmail.readonly")]
         googleScopeInsert = [("scope", "https://www.googleapis.com/auth/gmail.insert")]
         googleScopeLabels = [("scope", "https://www.googleapis.com/auth/gmail.labels")]
+        googleScopeDrive  = [("scope", "https://www.googleapis.com/auth/drive.readonly")]
         googleScope = pure
                     . ("scope",)
                     . joinScopes
@@ -257,6 +259,7 @@ loginGoogle = do
                     , googleScopeRead
                     , googleScopeInsert
                     , googleScopeLabels
+                    , googleScopeDrive
                     ]
 
         joinScopes :: [B.ByteString] -> B.ByteString
@@ -284,7 +287,7 @@ loadGoogle = do
                      ] []
     maybe (throwD ex) return $ do
         (Entity sid s') <- s
-        token <- encodeUtf8 <$> _serviceInfoAccessToken  s'
+        token <- encodeUtf8 <$> _serviceInfoAccessToken s'
         return $ GoogleStream (Just sid) token
     where
         ex = GoogleException "Invalid service: Google"
@@ -341,7 +344,7 @@ downloadGoogleMessages gs = do
     -- TODO: catch errors and abort?
     -- TODO: remove watches and traces
     runResourceT
-        $   pages optq Nothing
+        $   pages messagesNextPageToken messagesMessages optq messagesUrl
         =$= mapC _messageShortId
         =$= filterC (not . (`S.member` seen))
         =$= chunkC 50
@@ -364,41 +367,46 @@ downloadGoogleMessages gs = do
         jsonMsg :: Response L8.ByteString -> Dialogue Message
         jsonMsg = asJSON'
 
-        setOf :: (Eq b, Hashable b) => (a -> b) -> L.Fold a (S.HashSet b)
-        setOf f = L.Fold (flip (S.insert . f)) S.empty id
+setOf :: (Eq b, Hashable b) => (a -> b) -> L.Fold a (S.HashSet b)
+setOf f = L.Fold (flip (S.insert . f)) S.empty id
 
-        batchGet :: Options -> [(T.Text, String)] -> Dialogue (Response [Response L8.ByteString])
-        batchGet o gets = do
-            msg <- liftIO
-                $  postWith o batchUrl
-                $  MultiMixed
-                $  map ( (partContentType ?~ "application/http")
-                       . uncurry partString
-                       . second (("GET " <>) . (<> "\r\n"))
-                       ) gets
-            -- let filename = TL.unpack $ F.format "multi-{}.txt" $ Only $ fst $ head gets
-            -- liftIO $ L8.writeFile filename $ msg ^. responseBody
-            parseMulti msg
+batchGet :: Options -> [(T.Text, String)]
+         -> Dialogue (Response [Response L8.ByteString])
+batchGet o gets = do
+    msg <- liftIO
+        $  postWith o batchUrl
+        $  MultiMixed
+        $  map ( (partContentType ?~ "application/http")
+               . uncurry partString
+               . second (("GET " <>) . (<> "\r\n"))
+               ) gets
+    -- let filename = TL.unpack $ F.format "multi-{}.txt" $ Only $ fst $ head gets
+    -- liftIO $ L8.writeFile filename $ msg ^. responseBody
+    parseMulti msg
 
-        chunkC :: Monad m => Int -> Conduit a m [a]
-        chunkC n = do
-            xs <- catMaybes <$> replicateM n await
-            case xs of
-                []  -> return ()
-                xs' -> yield xs' >> chunkC n
+chunkC :: Monad m => Int -> Conduit a m [a]
+chunkC n = do
+    xs <- catMaybes <$> replicateM n await
+    case xs of
+        []  -> return ()
+        xs' -> yield xs' >> chunkC n
 
-        pages :: Options -> Maybe T.Text
-              -> Producer (ResourceT Dialogue) MessageShort
-        pages o p = do
+pages :: FromJSON list
+      => Lens' list (Maybe T.Text)
+      -> Lens' list [a]
+      -> Options
+      -> String
+      -> Producer (ResourceT Dialogue) a
+pages nextPageToken cs o url = go Nothing
+    where
+        go p = do
             let o' = maybe o (flip (set (param "pageToken")) o . pure) p
-            ml <- lift . lift . asJSON' =<< liftIO (getWith o' messagesUrl)
-            case ml ^. messagesMessages of
+            l <- lift . lift . asJSON' =<< liftIO (getWith o' url)
+            case l ^. cs of
                 [] -> return ()
                 ms -> do
                     yieldMany ms
-                    case ml ^. messagesNextPageToken of
-                        pt@(Just _) -> pages o pt
-                        Nothing     -> return ()
+                    maybe (return ()) (go . Just) $ l ^. nextPageToken
 
 parseMulti :: Response L8.ByteString -> Dialogue (Response [Response L8.ByteString])
 parseMulti r

@@ -17,10 +17,13 @@ journal: build
 migrate: build
 	$(RUN) migrate --db-file $(DB) --service twitter --input `make last-archive`
 
-update: build adium google note twitter archive
+update: build adium gdoc google note twitter archive
 
 adium: build
 	$(RUN) update --db-file $(DB) --service adium
+
+gdoc: build
+	$(RUN) update --db-file $(DB) --service gdoc
 
 google: build
 	$(RUN) update --db-file $(DB) --service google
@@ -109,7 +112,7 @@ bench:
 	stack bench $(BUILD_FLAGS)
 
 watch:
-	stack build --file-watch --pedantic --fast --exec "make publish"
+	stack build --file-watch --pedantic --fast # --exec "make publish"
 
 watch-test:
 	stack test --file-watch --pedantic --test-arguments "-m Google"

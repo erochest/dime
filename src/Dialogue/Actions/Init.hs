@@ -19,6 +19,7 @@ import           Database.Persist
 import           Dialogue.Models
 import           Dialogue.Streams
 import           Dialogue.Streams.Adium
+import           Dialogue.Streams.GDoc
 import           Dialogue.Streams.Google
 import           Dialogue.Streams.Mail
 import           Dialogue.Streams.Note
@@ -34,6 +35,7 @@ initialize dbFile = runDialogueS' (T.pack dbFile) $ do
         =<< (unfoldM (promptMaybe "New profile") :: Dialogue [Profile])
     void $ init' (Proxy :: Proxy AdiumStream)
     void $ init' (Proxy :: Proxy GoogleStream)
+    void $ init' (Proxy :: Proxy GDocStream)
     void $ init' (Proxy :: Proxy MailStream)
     void $ init' (Proxy :: Proxy NoteStream)
     void $ init' (Proxy :: Proxy TwitterStream)
