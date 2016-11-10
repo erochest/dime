@@ -66,6 +66,9 @@ last-stats:
 last-epub:
 	@ls -1 tmp/epub3/*.epub | tail -1
 
+last-archivedb:
+	@ls -1 tmp/dialogue.sqlite-* | tail -1
+
 docs:
 	stack haddock
 	open `stack path --local-doc-root`/index.html
