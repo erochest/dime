@@ -2,7 +2,15 @@
 # BUILD_FLAGS=--pedantic --library-profiling --executable-profiling
 BUILD_FLAGS=--pedantic
 
-RUN=stack exec -- dialogue
+STACK=stack
+RUN=$(STACK) exec \
+	--docker-env QUERY_USER=$(QUERY_USER) \
+	--docker-env QUERY_EMAIL=$(QUERY_EMAIL) \
+	--docker-env TWITTER_KEY=$(TWITTER_KEY) \
+	--docker-env TWITTER_SECRET=$(TWITTER_SECRET) \
+	--docker-env GOOGLE_KEY=$(GOOGLE_KEY) \
+	--docker-env GOOGLE_SECRET=$(GOOGLE_SECRET) \
+	-- dialogue
 DB=dialogue.sqlite
 
 run: build archivedb update stats publish archive
@@ -63,6 +71,9 @@ last-archive:
 last-stats:
 	@ls -1 tmp/stats-*.json | tail -1
 
+last-md:
+	@ls -1 tmp/epub3/*.md | tail -1
+
 last-epub:
 	@ls -1 tmp/epub3/*.epub | tail -1
 
@@ -70,8 +81,8 @@ last-archivedb:
 	@ls -1 tmp/dialogue.sqlite-* | tail -1
 
 docs:
-	stack haddock
-	open `stack path --local-doc-root`/index.html
+	$(STACK) haddock
+	open `$(STACK) path --local-doc-root`/index.html
 
 # package:
 # build a release tarball or executable
@@ -86,11 +97,11 @@ configure:
 	cabal configure \
 		--package-db=clear \
 		--package-db=global \
-		--package-db=`stack path --snapshot-pkg-db` \
-		--package-db=`stack path --local-pkg-db`
+		--package-db=`$(STACK) path --snapshot-pkg-db` \
+		--package-db=`$(STACK) path --local-pkg-db`
 
 install:
-	stack install
+	$(STACK) install
 
 tags: $(SRC)
 	codex update
@@ -99,26 +110,26 @@ hlint:
 	hlint *.hs src specs
 
 clean:
-	stack clean
+	$(STACK) clean
 	codex cache clean
 
 distclean: clean
 	rm stack.yaml
 
 build:
-	stack build $(BUILD_FLAGS)
+	$(STACK) build $(BUILD_FLAGS)
 
 test:
-	stack test $(BUILD_FLAGS) # --test-arguments "-m TODO"
+	$(STACK) test $(BUILD_FLAGS) # --test-arguments "-m TODO"
 
 bench:
-	stack bench $(BUILD_FLAGS)
+	$(STACK) bench $(BUILD_FLAGS)
 
 watch:
-	stack build --file-watch --pedantic --fast # --exec "make publish"
+	$(STACK) build --file-watch --pedantic --fast --exec "make watch-run"
 
 watch-test:
-	stack test --file-watch --pedantic --test-arguments "-m Google"
+	$(STACK) test --file-watch --pedantic --test-arguments "-m Google"
 
 restart: distclean build
 
