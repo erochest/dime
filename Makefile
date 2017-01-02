@@ -16,6 +16,9 @@ DB=dialogue.sqlite
 run: build archivedb update stats publish archive
 	cat `make last-archive` | xz > $(HOME)/Dropbox/dialogues/archive-`timestamp`.json.xz
 
+watch-run:
+	$(RUN) links --help
+
 init: build
 	$(RUN) init --db-file $(DB)
 
@@ -24,6 +27,9 @@ journal: build
 
 migrate: build
 	$(RUN) migrate --db-file $(DB) --service twitter --input `make last-archive`
+
+links: build
+	cat `make last-md` | $(RUN) links | less
 
 update: build adium gdoc google note twitter archive
 

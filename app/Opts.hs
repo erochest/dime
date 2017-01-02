@@ -88,6 +88,9 @@ initOpts = Init <$> dbFileOpt
 journalOpts :: Parser Actions
 journalOpts = Journal <$> dbFileOpt <*> optional dateOpt <*> inputOpt
 
+linkOpts :: Parser Actions
+linkOpts = pure Links
+
 mailOpts :: Parser Actions
 mailOpts = Mail <$> dbFileOpt <*> inputFileOpt
 
@@ -114,6 +117,8 @@ opts' = subparser
                             (progDesc "Default action and options."))
       <> command "journal" (info (helper <*> journalOpts)
                             (progDesc "Record a separate journal entry."))
+      <> command "links"   (info (helper <*> linkOpts)
+                            (progDesc "Output an index of the links in a file."))
       <> command "mail"    (info (helper <*> mailOpts)
                             (progDesc "Import an mbox file."))
       <> command "migrate" (info (helper <*> migrateOpts)

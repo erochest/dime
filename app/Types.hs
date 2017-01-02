@@ -17,6 +17,7 @@ data Actions
               , journalDate   :: !(Maybe UTCTime)
               , journalInput  :: !TextInput
               }
+    | Links
     | Mail    { mailDbFile    :: !FilePath
               , mailMBox      :: !FilePath
               }

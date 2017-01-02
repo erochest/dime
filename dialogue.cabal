@@ -17,6 +17,7 @@ library
   exposed-modules:     Dialogue.Actions.Archive
                      , Dialogue.Actions.Init
                      , Dialogue.Actions.Journal
+                     , Dialogue.Actions.LinkIndex
                      , Dialogue.Actions.Mail
                      , Dialogue.Actions.Migrate
                      , Dialogue.Actions.Publish
@@ -71,6 +72,8 @@ library
                      , monad-logger
                      , mtl
                      , open-browser
+                     , pandoc
+                     , pandoc-types
                      , parsec
                      , persistent
                      , persistent-sqlite
