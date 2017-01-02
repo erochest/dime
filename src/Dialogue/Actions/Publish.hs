@@ -24,12 +24,14 @@ import           Data.Sequence           (ViewL (..), (|>))
 import qualified Data.Sequence           as Seq
 import qualified Data.Text               as T
 import           Data.Text.Format
+import qualified Data.Text.Lazy          as TL
 import           Data.Text.Lazy.Builder
 import qualified Data.Text.Lazy.IO       as TLIO
 import           Data.Time
 import           Database.Persist
 import           Database.Persist.Sql
 import           System.Directory
+import           System.Environment
 import           System.FilePath
 import           System.Process
 
@@ -91,12 +93,13 @@ publishEpub dbFile outputDir = runDialogueS' (T.pack dbFile) $ do
         epub     = outputDir </> basename <.> "epub"
     tz <- liftIO getCurrentTimeZone
     md <- liftIO $ metadata ps
-    liftIO
-        . TLIO.writeFile filename
-        . toLazyText
-        . mconcat
-        . (md:)
-        $ map (renderChapter tz) bs
+    let content = toLazyText . mconcat . (md:) $ map (renderChapter tz) bs
+    dialogue <- liftIO $ getExecutablePath
+    links <- liftIO
+          $  fmap TL.pack
+          $  readCreateProcess (proc dialogue ["links"])
+          $  TL.unpack content
+    liftIO $ TLIO.writeFile filename $ TL.concat [content, "\n\n", links]
     printEpub3 filename epub
 
 metadata :: M.HashMap Int64 (Entity Profile) -> IO Builder
