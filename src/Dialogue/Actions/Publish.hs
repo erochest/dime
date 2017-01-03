@@ -47,8 +47,8 @@ blockSpan :: NominalDiffTime
 blockSpan = 900
 -- 15 minutes
 
-publishEpub :: FilePath -> FilePath -> Script ()
-publishEpub dbFile outputDir = runDialogueS' (T.pack dbFile) $ do
+publishEpub :: FilePath -> Maybe FilePath -> FilePath -> Script ()
+publishEpub dbFile coverImage outputDir = runDialogueS' (T.pack dbFile) $ do
     as :: [AdiumMessage  ] <- liftSql $ map entityVal <$> selectList [] []
     gd :: [GDoc          ] <- liftSql $ map entityVal <$> selectList [] []
     gs :: [GoogleMessage ] <- liftSql $ map entityVal <$> selectList [] []
@@ -100,7 +100,7 @@ publishEpub dbFile outputDir = runDialogueS' (T.pack dbFile) $ do
           $  readCreateProcess (proc dialogue ["links"])
           $  TL.unpack content
     liftIO $ TLIO.writeFile filename $ TL.concat [content, "\n\n", links]
-    printEpub3 filename epub
+    printEpub3 filename coverImage epub
 
 metadata :: M.HashMap Int64 (Entity Profile) -> IO Builder
 metadata ps = do
@@ -206,14 +206,18 @@ renderClass PublishBlock{_pbService=GoogleService, _pbTags=tags}
     | "CHAT" `S.member` tags = "google chat"
     | otherwise              = "google"
 
-printEpub3 :: FilePath -> FilePath -> Dialogue ()
-printEpub3 mdFile epubFile = do
+printEpub3 :: FilePath -> Maybe FilePath -> FilePath -> Dialogue ()
+printEpub3 mdFile coverImage epubFile = do
     style <- liftIO $ getDataFileName "epub-files/style.css"
-    liftIO $ callProcess "pandoc" [ "--smart"
-                                  , "--epub-stylesheet", style
-                                  , "--epub-chapter-level", "1"
-                                  , "--from", "markdown+autolink_bare_uris"
-                                  , "--to", "epub3"
-                                  , "--output", epubFile
-                                  , mdFile
-                                  ]
+    liftIO
+        $  callProcess "pandoc"
+        $  [ "--smart"
+           , "--epub-stylesheet", style
+           , "--epub-chapter-level", "1"
+           , "--from", "markdown+autolink_bare_uris"
+           , "--to", "epub3"
+           ]
+        ++ foldMap (("--epub-cover-image":) . pure) coverImage
+        ++ [ "--output", epubFile
+           , mdFile
+           ]

@@ -62,7 +62,7 @@ mail: build
 	echo "select count(*) from mail_message;" | sqlite3 $(DB)
 
 publish: build
-	$(RUN) publish --db-file $(DB) --output tmp/epub3/
+	$(RUN) publish --db-file $(DB) --output tmp/epub3/ --cover-image tmp/octopus.jpg
 	-rm -rf tmp/epub3-contents
 	mkdir tmp/epub3-contents
 	unzip -d tmp/epub3-contents `make last-epub`

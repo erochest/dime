@@ -29,6 +29,6 @@ action Journal{..} = addJournal journalDbFile journalDate journalInput
 action Links       = indexLinks
 action Mail{..}    = importMBox mailDbFile mailMBox
 action Migrate{..} = migrateFile migrateDbFile migrateStream migrateInput
-action Publish{..} = publishEpub publishDbFile publishOutDir
+action Publish{..} = publishEpub publishDbFile publishCoverImage publishOutDir
 action Stats{..}   = generateStats statsDbFile statsOutput
 action Update{..}  = updateService updateDbFile updateStream

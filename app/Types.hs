@@ -25,8 +25,9 @@ data Actions
               , migrateInput  :: !FilePath
               , migrateStream :: !Service
               }
-    | Publish { publishDbFile :: !FilePath
-              , publishOutDir :: !FilePath
+    | Publish { publishDbFile     :: !FilePath
+              , publishCoverImage :: !(Maybe FilePath)
+              , publishOutDir     :: !FilePath
               }
     | Stats   { statsDbFile   :: !FilePath
               , statsOutput   :: !FilePath

@@ -104,7 +104,13 @@ statsOpts :: Parser Actions
 statsOpts = Stats <$> dbFileOpt <*> outputFileOpt
 
 publishOpts :: Parser Actions
-publishOpts = Publish <$> dbFileOpt <*> outputDirOpt
+publishOpts =   Publish
+            <$> dbFileOpt
+            <*> optional (strOption (  short 'c' <> long "cover-image"
+                                    <> metavar "IMAGE_FILE"
+                                    <> help "The file name for the cover\
+                                            \ image."))
+            <*> outputDirOpt
 
 archiveOpts :: Parser Actions
 archiveOpts = Archive <$> dbFileOpt <*> outputFileOpt
